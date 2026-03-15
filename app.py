@@ -271,7 +271,7 @@ async def auth_logout():
 
 # Webhook Routes
 @app.get('/webhook')
-async def webhook_get(request):
+async def webhook_get(request: Request):
     """
     Webhook verification endpoint.
     Validates the webhook request from Meta.
