@@ -563,7 +563,7 @@
 
     <script>
         // API Base URL
-        const API_BASE = '/api';
+        const API_BASE = '';
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
@@ -629,7 +629,7 @@
         // Handle Token Refresh
         async function handleTokenRefresh() {
             try {
-                const response = await fetch(`${API_BASE}/refresh-token`);
+                const response = await fetch(`${API_BASE}/api/refresh-token`);
                 if (!response.ok) throw new Error('Failed to refresh token');
                 const data = await response.json();
                 
@@ -650,7 +650,7 @@
             if (!confirm('Are you sure you want to disconnect your Instagram account?')) return;
             
             try {
-                const response = await fetch(`${API_BASE}/auth/logout`);
+                const response = await fetch(`/auth/logout`);
                 if (!response.ok) throw new Error('Failed to logout');
                 
                 showToast('Disconnected', 'success');
@@ -666,7 +666,7 @@
         
         async function loadStats() {
             try {
-                const response = await fetch(`${API_BASE}/stats`);
+                const response = await fetch(`${API_BASE}/api/stats`);
                 if (!response.ok) throw new Error('Failed to load stats');
                 const data = await response.json();
                 
@@ -681,7 +681,7 @@
         // Load Reels
         async function loadReels() {
             try {
-                const response = await fetch(`${API_BASE}/reels`);
+                const response = await fetch(`${API_BASE}/api/reels`);
                 if (!response.ok) throw new Error('Failed to load reels');
                 const data = await response.json();
                 const reels = data.reels || [];
@@ -722,7 +722,7 @@
         // Edit Reel
         async function editReel(reelId) {
             try {
-                const response = await fetch(`${API_BASE}/reels/${reelId}`);
+                const response = await fetch(`${API_BASE}/api/reels/${reelId}`);
                 if (!response.ok) throw new Error('Failed to load reel');
                 const reel = await response.json();
 
@@ -773,7 +773,7 @@
                     return;
                 }
 
-                const response = await fetch(`${API_BASE}/reels/${reelId}`, {
+                const response = await fetch(`${API_BASE}/api/reels/${reelId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -798,7 +798,7 @@
             if (!confirm('Delete this reel?')) return;
 
             try {
-                const response = await fetch(`${API_BASE}/reels/${reelId}`, {
+                const response = await fetch(`${API_BASE}/api/reels/${reelId}`, {
                     method: 'DELETE'
                 });
 
@@ -822,7 +822,7 @@
                 const keyword = document.getElementById('keyword').value;
                 const message = document.getElementById('message').value;
 
-                const response = await fetch(`${API_BASE}/reels`, {
+                const response = await fetch(`${API_BASE}/api/reels`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

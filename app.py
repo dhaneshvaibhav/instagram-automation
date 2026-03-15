@@ -3,7 +3,7 @@ import json
 import aiohttp
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -271,20 +271,21 @@ async def auth_logout():
 
 # Webhook Routes
 @app.get('/webhook')
-async def webhook_get(
-    hub_mode: str = Query(None, alias="hub.mode"),
-    hub_verify_token: str = Query(None, alias="hub.verify_token"),
-    hub_challenge: str = Query(None, alias="hub.challenge")
-):
+async def webhook_get(request):
     """
     Webhook verification endpoint.
     Validates the webhook request from Meta.
     """
+    # Extract query parameters
+    hub_mode = request.query_params.get('hub.mode')
+    hub_verify_token = request.query_params.get('hub.verify_token')
+    hub_challenge = request.query_params.get('hub.challenge')
+    
     if hub_mode == 'subscribe' and hub_verify_token == VERIFY_TOKEN:
         print(f"✓ Webhook verified successfully")
         return hub_challenge
     else:
-        print(f"✗ Webhook verification failed")
+        print(f"✗ Webhook verification failed - mode: {hub_mode}, token: {hub_verify_token}")
         raise HTTPException(status_code=403, detail="Forbidden")
 
 
