@@ -1,12 +1,13 @@
 import os
-import requests
-from flask import Flask, request, jsonify
+import aiohttp
+from fastapi import FastAPI, Query, HTTPException
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 # Load environment variables from .env
 load_dotenv()
 
-app = Flask(__name__)
+app = FastAPI(title="Instagram Reel DM Bot", version="1.0.0")
 
 # Configuration
 ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
@@ -23,38 +24,42 @@ REEL_MESSAGES = {
 DEFAULT_MESSAGE = "Thanks for commenting! Check back soon for more updates."
 
 
-@app.route('/webhook', methods=['GET'])
-def webhook_get():
+# Pydantic models for request validation
+class WebhookPayload(BaseModel):
+    object: str = None
+    entry: list = None
+
+
+@app.get('/webhook')
+async def webhook_get(
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_verify_token: str = Query(None, alias="hub.verify_token"),
+    hub_challenge: str = Query(None, alias="hub.challenge")
+):
     """
     Webhook verification endpoint.
     Validates the webhook request from Meta.
     """
-    hub_mode = request.args.get('hub.mode')
-    hub_verify_token = request.args.get('hub.verify_token')
-    hub_challenge = request.args.get('hub.challenge')
-    
     if hub_mode == 'subscribe' and hub_verify_token == VERIFY_TOKEN:
         print(f"✓ Webhook verified successfully")
-        return hub_challenge, 200
+        return hub_challenge
     else:
         print(f"✗ Webhook verification failed")
-        return "Forbidden", 403
+        raise HTTPException(status_code=403, detail="Forbidden")
 
 
-@app.route('/webhook', methods=['POST'])
-def webhook_post():
+@app.post('/webhook')
+async def webhook_post(payload: WebhookPayload):
     """
     Webhook POST endpoint.
     Receives comment notifications and sends DMs.
     """
-    data = request.get_json()
-    
-    if not data:
-        return jsonify({"status": "ok"}), 200
+    if not payload or not payload.entry:
+        return {"status": "ok"}
     
     try:
         # Parse webhook payload
-        entries = data.get('entry', [])
+        entries = payload.entry or []
         
         for entry in entries:
             changes = entry.get('changes', [])
@@ -73,18 +78,21 @@ def webhook_post():
                     
                     if commenter_id and media_id:
                         print(f"📝 New comment on media {media_id} from user {commenter_id}: {comment_text}")
-                        send_dm(commenter_id, media_id)
+                        # Send DM asynchronously without waiting
+                        # In production, consider using background tasks or a task queue
+                        import asyncio
+                        asyncio.create_task(send_dm(commenter_id, media_id))
         
-        return jsonify({"status": "ok"}), 200
+        return {"status": "ok"}
     
     except Exception as e:
         print(f"Error processing webhook: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-def send_dm(user_id, media_id):
+async def send_dm(user_id: str, media_id: str):
     """
-    Send a DM to the user based on the Reel they commented on.
+    Send a DM to the user based on the Reel they commented on (async).
     
     Args:
         user_id: Instagram user ID of the commenter
@@ -107,24 +115,25 @@ def send_dm(user_id, media_id):
             "access_token": ACCESS_TOKEN
         }
         
-        response = requests.post(url, json=payload)
-        
-        if response.status_code == 200:
-            print(f"✓ DM sent to user {user_id}")
-            return response.json()
-        else:
-            print(f"✗ Failed to send DM to user {user_id}: {response.text}")
-            return None
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as response:
+                if response.status == 200:
+                    print(f"✓ DM sent to user {user_id}")
+                    return await response.json()
+                else:
+                    text = await response.text()
+                    print(f"✗ Failed to send DM to user {user_id}: {text}")
+                    return None
     
     except Exception as e:
         print(f"Error sending DM: {str(e)}")
         return None
 
 
-@app.route('/refresh-token', methods=['GET'])
-def refresh_token():
+@app.get('/refresh-token')
+async def refresh_token():
     """
-    Refresh the access token using the Graph API.
+    Refresh the access token using the Graph API (async).
     """
     try:
         url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/me"
@@ -133,36 +142,36 @@ def refresh_token():
             "access_token": ACCESS_TOKEN
         }
         
-        response = requests.get(url, params=params)
-        
-        if response.status_code == 200:
-            print("✓ Token validation successful")
-            return jsonify({
-                "status": "success",
-                "data": response.json()
-            }), 200
-        else:
-            print(f"✗ Token validation failed: {response.text}")
-            return jsonify({
-                "status": "error",
-                "message": "Token refresh failed"
-            }), response.status_code
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    print("✓ Token validation successful")
+                    return {
+                        "status": "success",
+                        "data": data
+                    }
+                else:
+                    text = await response.text()
+                    print(f"✗ Token validation failed: {text}")
+                    raise HTTPException(
+                        status_code=response.status,
+                        detail="Token refresh failed"
+                    )
     
     except Exception as e:
         print(f"Error refreshing token: {str(e)}")
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.route('/health', methods=['GET'])
-def health_check():
+@app.get('/health')
+async def health_check():
     """
-    Health check endpoint.
+    Health check endpoint (async).
     """
-    return jsonify({"status": "healthy"}), 200
+    return {"status": "healthy"}
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=5000)

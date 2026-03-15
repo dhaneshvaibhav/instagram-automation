@@ -1,4 +1,4 @@
-flask
-requests
+fastapi
+uvicorn[standard]
+aiohttp
 python-dotenv
-gunicorn
