@@ -104,7 +104,11 @@ def load_token_data():
 async def exchange_code_for_token(code: str):
     """
     Exchange OAuth code for short-lived access token using official Instagram API.
+    Strips #_ suffix from code if present.
     """
+    # Strip #_ suffix that Instagram adds to the code
+    code = code.replace("#_", "")
+    
     url = "https://api.instagram.com/oauth/access_token"
     data = {
         "client_id": APP_ID,
@@ -164,14 +168,16 @@ async def get_ig_account_id(access_token: str):
 async def auth_login():
     """
     Redirect user to Instagram OAuth login page.
-    Uses official Instagram API endpoints (July 2024+).
+    Uses official Instagram Business Login Flow (2025+).
     """
-    oauth_url = "https://api.instagram.com/oauth/authorize"
+    oauth_url = "https://www.instagram.com/oauth/authorize"
     params = {
         "client_id": APP_ID,
         "redirect_uri": REDIRECT_URI,
-        "scope": "instagram_business_basic,instagram_manage_comments,instagram_business_manage_messages",
-        "response_type": "code"
+        "scope": "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages",
+        "response_type": "code",
+        "enable_fb_login": "0",
+        "force_reauth": "0"
     }
     
     auth_url = f"{oauth_url}?{urlencode(params)}"
@@ -370,6 +376,7 @@ async def send_dm(user_id: str, media_id: str):
 async def refresh_token():
     """
     Refresh the access token using official Instagram API endpoint.
+    Uses graph.instagram.com/refresh_access_token per official docs.
     """
     try:
         token_data = load_token_data()
@@ -377,7 +384,7 @@ async def refresh_token():
             raise HTTPException(status_code=401, detail="Not authenticated")
         
         current_token = token_data.get("access_token")
-        url = "https://graph.instagram.com/access_token"
+        url = "https://graph.instagram.com/refresh_access_token"
         params = {
             "grant_type": "ig_refresh_token",
             "access_token": current_token
