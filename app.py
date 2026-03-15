@@ -4,7 +4,7 @@ import aiohttp
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from fastapi import FastAPI, Query, HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, PlainTextResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
@@ -179,12 +179,13 @@ async def get_ig_account_id(access_token: str):
 async def auth_login():
     """
     Redirect user to Instagram OAuth login page.
+    Uses the three approved Instagram Business scopes.
     """
     oauth_url = "https://www.facebook.com/v19.0/dialog/oauth"
     params = {
         "client_id": APP_ID,
         "redirect_uri": REDIRECT_URI,
-        "scope": "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,pages_read_engagement,pages_manage_metadata,pages_read_user_content",
+        "scope": "instagram_business_basic,instagram_manage_comments,instagram_business_manage_messages",
         "response_type": "code"
     }
     
@@ -275,15 +276,18 @@ async def webhook_get(request: Request):
     """
     Webhook verification endpoint.
     Validates the webhook request from Meta.
+    Meta expects a plain text response with just the challenge value.
     """
     # Extract query parameters
     hub_mode = request.query_params.get('hub.mode')
     hub_verify_token = request.query_params.get('hub.verify_token')
     hub_challenge = request.query_params.get('hub.challenge')
     
+    print(f"Webhook verification attempt - mode: {hub_mode}, token: {hub_verify_token}, challenge: {hub_challenge}")
+    
     if hub_mode == 'subscribe' and hub_verify_token == VERIFY_TOKEN:
-        print(f"✓ Webhook verified successfully")
-        return hub_challenge
+        print(f"✓ Webhook verified successfully - returning challenge: {hub_challenge}")
+        return PlainTextResponse(hub_challenge)
     else:
         print(f"✗ Webhook verification failed - mode: {hub_mode}, token: {hub_verify_token}")
         raise HTTPException(status_code=403, detail="Forbidden")
