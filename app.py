@@ -103,10 +103,10 @@ def load_token_data():
 
 async def exchange_code_for_token(code: str):
     """
-    Exchange OAuth code for short-lived access token using Instagram API.
+    Exchange OAuth code for short-lived access token using official Instagram API.
     """
     url = "https://api.instagram.com/oauth/access_token"
-    params = {
+    data = {
         "client_id": APP_ID,
         "client_secret": APP_SECRET,
         "grant_type": "authorization_code",
@@ -115,7 +115,7 @@ async def exchange_code_for_token(code: str):
     }
     
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, params=params) as response:
+        async with session.post(url, data=data) as response:
             if response.status != 200:
                 raise Exception(f"Failed to exchange code: {await response.text()}")
             return await response.json()
@@ -123,11 +123,13 @@ async def exchange_code_for_token(code: str):
 
 async def exchange_short_token_for_long(short_token: str):
     """
-    Exchange short-lived token for long-lived token (60 days) using Instagram API.
+    Exchange short-lived token for long-lived token (60 days) using official Instagram API.
+    Uses graph.instagram.com endpoint with ig_exchange_token grant.
     """
-    url = "https://api.instagram.com/oauth/access_token"
+    url = "https://graph.instagram.com/access_token"
     params = {
-        "grant_type": "ig_refresh_token",
+        "grant_type": "ig_exchange_token",
+        "client_secret": APP_SECRET,
         "access_token": short_token
     }
     
@@ -140,37 +142,21 @@ async def exchange_short_token_for_long(short_token: str):
 
 async def get_ig_account_id(access_token: str):
     """
-    Get Instagram business account ID from the long-lived token.
+    Get Instagram business account ID and username from the long-lived token.
+    Uses official graph.instagram.com API endpoint.
     """
-    # First get the page ID
-    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/me/accounts"
-    params = {"access_token": access_token}
+    url = "https://graph.instagram.com/me"
+    params = {
+        "fields": "id,username",
+        "access_token": access_token
+    }
     
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as response:
             if response.status != 200:
-                raise Exception(f"Failed to get accounts: {await response.text()}")
+                raise Exception(f"Failed to get IG account: {await response.text()}")
             data = await response.json()
-            
-            if not data.get("data"):
-                raise Exception("No pages found")
-            
-            page_id = data["data"][0]["id"]
-            
-            # Now get the Instagram business account from the page
-            url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{page_id}"
-            params = {
-                "fields": "instagram_business_account",
-                "access_token": access_token
-            }
-            
-            async with session.get(url, params=params) as response:
-                if response.status != 200:
-                    raise Exception(f"Failed to get IG account: {await response.text()}")
-                data = await response.json()
-                
-                ig_account = data.get("instagram_business_account", {})
-                return ig_account.get("id")
+            return data.get("id")
 
 
 # OAuth Routes
@@ -178,7 +164,7 @@ async def get_ig_account_id(access_token: str):
 async def auth_login():
     """
     Redirect user to Instagram OAuth login page.
-    Uses Instagram API OAuth endpoint with three approved scopes.
+    Uses official Instagram API endpoints (July 2024+).
     """
     oauth_url = "https://api.instagram.com/oauth/authorize"
     params = {
@@ -383,7 +369,7 @@ async def send_dm(user_id: str, media_id: str):
 @app.get('/refresh-token')
 async def refresh_token():
     """
-    Refresh the access token using Instagram API (async).
+    Refresh the access token using official Instagram API endpoint.
     """
     try:
         token_data = load_token_data()
@@ -391,7 +377,7 @@ async def refresh_token():
             raise HTTPException(status_code=401, detail="Not authenticated")
         
         current_token = token_data.get("access_token")
-        url = "https://api.instagram.com/oauth/access_token"
+        url = "https://graph.instagram.com/access_token"
         params = {
             "grant_type": "ig_refresh_token",
             "access_token": current_token
