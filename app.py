@@ -1,8 +1,10 @@
 import os
+import json
 import aiohttp
+from datetime import datetime, timedelta
+from urllib.parse import urlencode
 from fastapi import FastAPI, Query, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
@@ -15,9 +17,11 @@ app = FastAPI(title="Instagram Reel DM Bot", version="1.0.0")
 # In-memory storage for reels (use database in production)
 reels_db = {}
 
-# Configuration
-ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
+# Configuration from .env
+APP_ID = os.getenv('APP_ID')
+APP_SECRET = os.getenv('APP_SECRET')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
+REDIRECT_URI = os.getenv('REDIRECT_URI', 'http://localhost:5000/auth/callback')
 GRAPH_API_VERSION = 'v19.0'
 
 # Reel ID to custom DM message mapping
@@ -47,6 +51,225 @@ class ReelUpdate(BaseModel):
     keyword: str = None
 
 
+# Helper Functions
+def get_access_token():
+    """
+    Retrieve access token from token.json file.
+    Returns None if file doesn't exist or token is expired.
+    """
+    try:
+        with open("token.json") as f:
+            data = json.load(f)
+            # Check if token is expired
+            expires_at = data.get("expires_at")
+            if expires_at:
+                if datetime.fromisoformat(expires_at) < datetime.now():
+                    return None
+            return data.get("access_token")
+    except FileNotFoundError:
+        return None
+    except Exception as e:
+        print(f"Error reading token.json: {e}")
+        return None
+
+
+def save_token(access_token: str, ig_account_id: str):
+    """
+    Save access token and IG account ID to token.json with 60-day expiry.
+    """
+    expires_at = (datetime.now() + timedelta(days=60)).isoformat()
+    token_data = {
+        "access_token": access_token,
+        "ig_account_id": ig_account_id,
+        "expires_at": expires_at
+    }
+    with open("token.json", "w") as f:
+        json.dump(token_data, f, indent=2)
+
+
+def load_token_data():
+    """
+    Load token data from token.json.
+    """
+    try:
+        with open("token.json") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+    except Exception as e:
+        print(f"Error reading token.json: {e}")
+        return None
+
+
+async def exchange_code_for_token(code: str):
+    """
+    Exchange OAuth code for short-lived access token.
+    """
+    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/oauth/access_token"
+    params = {
+        "client_id": APP_ID,
+        "client_secret": APP_SECRET,
+        "redirect_uri": REDIRECT_URI,
+        "code": code
+    }
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, params=params) as response:
+            if response.status != 200:
+                raise Exception(f"Failed to exchange code: {await response.text()}")
+            return await response.json()
+
+
+async def exchange_short_token_for_long(short_token: str):
+    """
+    Exchange short-lived token for long-lived token (60 days).
+    """
+    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/oauth/access_token"
+    params = {
+        "grant_type": "fb_exchange_token",
+        "client_id": APP_ID,
+        "client_secret": APP_SECRET,
+        "fb_exchange_token": short_token
+    }
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as response:
+            if response.status != 200:
+                raise Exception(f"Failed to get long-lived token: {await response.text()}")
+            return await response.json()
+
+
+async def get_ig_account_id(access_token: str):
+    """
+    Get Instagram business account ID from the long-lived token.
+    """
+    # First get the page ID
+    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/me/accounts"
+    params = {"access_token": access_token}
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as response:
+            if response.status != 200:
+                raise Exception(f"Failed to get accounts: {await response.text()}")
+            data = await response.json()
+            
+            if not data.get("data"):
+                raise Exception("No pages found")
+            
+            page_id = data["data"][0]["id"]
+            
+            # Now get the Instagram business account from the page
+            url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{page_id}"
+            params = {
+                "fields": "instagram_business_account",
+                "access_token": access_token
+            }
+            
+            async with session.get(url, params=params) as response:
+                if response.status != 200:
+                    raise Exception(f"Failed to get IG account: {await response.text()}")
+                data = await response.json()
+                
+                ig_account = data.get("instagram_business_account", {})
+                return ig_account.get("id")
+
+
+# OAuth Routes
+@app.get('/auth/login')
+async def auth_login():
+    """
+    Redirect user to Instagram OAuth login page.
+    """
+    oauth_url = "https://www.facebook.com/v19.0/dialog/oauth"
+    params = {
+        "client_id": APP_ID,
+        "redirect_uri": REDIRECT_URI,
+        "scope": "instagram_basic,instagram_manage_comments,instagram_manage_messages,pages_read_engagement,pages_manage_metadata,pages_messaging",
+        "response_type": "code"
+    }
+    
+    auth_url = f"{oauth_url}?{urlencode(params)}"
+    return RedirectResponse(url=auth_url)
+
+
+@app.get('/auth/callback')
+async def auth_callback(code: str = Query(None), error: str = Query(None)):
+    """
+    Callback endpoint after user logs in to Instagram.
+    Exchanges code for access token and saves it.
+    """
+    if error:
+        raise HTTPException(status_code=400, detail=f"Auth failed: {error}")
+    
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing authorization code")
+    
+    try:
+        # Exchange code for short-lived token
+        short_token_response = await exchange_code_for_token(code)
+        short_token = short_token_response.get("access_token")
+        
+        # Exchange short token for long-lived token
+        long_token_response = await exchange_short_token_for_long(short_token)
+        long_token = long_token_response.get("access_token")
+        
+        # Get IG Account ID
+        ig_account_id = await get_ig_account_id(long_token)
+        
+        if not ig_account_id:
+            raise Exception("Could not retrieve Instagram account ID")
+        
+        # Save token and account ID
+        save_token(long_token, ig_account_id)
+        
+        print(f"✓ Instagram account connected: {ig_account_id}")
+        return RedirectResponse(url="/")
+    
+    except Exception as e:
+        print(f"✗ OAuth callback error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
+
+
+@app.get('/auth/status')
+async def auth_status():
+    """
+    Check if Instagram account is connected and token status.
+    """
+    token_data = load_token_data()
+    
+    if not token_data:
+        return {"connected": False}
+    
+    expires_at = token_data.get("expires_at")
+    
+    # Check if token is expired
+    if expires_at:
+        if datetime.fromisoformat(expires_at) < datetime.now():
+            return {"connected": False}
+    
+    return {
+        "connected": True,
+        "expires_at": expires_at,
+        "ig_account_id": token_data.get("ig_account_id")
+    }
+
+
+@app.get('/auth/logout')
+async def auth_logout():
+    """
+    Logout and delete saved token.
+    """
+    try:
+        if os.path.exists("token.json"):
+            os.remove("token.json")
+            print("✓ User logged out, token deleted")
+    except Exception as e:
+        print(f"Error during logout: {e}")
+    
+    return RedirectResponse(url="/")
+
+
+# Webhook Routes
 @app.get('/webhook')
 async def webhook_get(
     hub_mode: str = Query(None, alias="hub.mode"),
@@ -116,6 +339,12 @@ async def send_dm(user_id: str, media_id: str):
         media_id: Instagram media (Reel) ID
     """
     try:
+        # Get access token
+        access_token = get_access_token()
+        if not access_token:
+            print(f"✗ No access token available")
+            return None
+        
         # Get the custom message for this reel, or use default
         message = REEL_MESSAGES.get(media_id, DEFAULT_MESSAGE)
         
@@ -129,7 +358,7 @@ async def send_dm(user_id: str, media_id: str):
             "message": {
                 "text": message
             },
-            "access_token": ACCESS_TOKEN
+            "access_token": access_token
         }
         
         async with aiohttp.ClientSession() as session:
@@ -153,24 +382,35 @@ async def refresh_token():
     Refresh the access token using the Graph API (async).
     """
     try:
-        url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/me"
+        token_data = load_token_data()
+        if not token_data:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        
+        current_token = token_data.get("access_token")
+        url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/oauth/access_token"
         params = {
-            "fields": "id,name",
-            "access_token": ACCESS_TOKEN
+            "grant_type": "ig_refresh_token",
+            "access_token": current_token
         }
         
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    print("✓ Token validation successful")
+                    new_token = data.get("access_token")
+                    
+                    # Save the new token
+                    save_token(new_token, token_data.get("ig_account_id"))
+                    
+                    expires_at = (datetime.now() + timedelta(days=60)).isoformat()
+                    print("✓ Token refreshed successfully")
                     return {
-                        "status": "success",
-                        "data": data
+                        "status": "refreshed",
+                        "expires_at": expires_at
                     }
                 else:
                     text = await response.text()
-                    print(f"✗ Token validation failed: {text}")
+                    print(f"✗ Token refresh failed: {text}")
                     raise HTTPException(
                         status_code=response.status,
                         detail="Token refresh failed"
