@@ -1,13 +1,19 @@
 import os
 import aiohttp
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from pathlib import Path
 
 # Load environment variables from .env
 load_dotenv()
 
 app = FastAPI(title="Instagram Reel DM Bot", version="1.0.0")
+
+# In-memory storage for reels (use database in production)
+reels_db = {}
 
 # Configuration
 ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
@@ -28,6 +34,17 @@ DEFAULT_MESSAGE = "Thanks for commenting! Check back soon for more updates."
 class WebhookPayload(BaseModel):
     object: str = None
     entry: list = None
+
+
+class ReelData(BaseModel):
+    reel_id: str
+    message: str
+    keyword: str = None
+
+
+class ReelUpdate(BaseModel):
+    message: str
+    keyword: str = None
 
 
 @app.get('/webhook')
@@ -170,6 +187,118 @@ async def health_check():
     Health check endpoint (async).
     """
     return {"status": "healthy"}
+
+
+# Dashboard Routes
+@app.get('/')
+async def serve_dashboard():
+    """
+    Serve the dashboard HTML file.
+    """
+    template_path = Path(__file__).parent / "templates" / "index.html"
+    if not template_path.exists():
+        raise HTTPException(status_code=404, detail="Dashboard not found")
+    return FileResponse(template_path, media_type="text/html")
+
+
+# API Routes for Dashboard
+@app.get('/api/stats')
+async def get_stats():
+    """
+    Get dashboard statistics.
+    """
+    return {
+        "total_reels": len(reels_db),
+        "dms_sent_today": 0,  # Would be fetched from database in production
+        "total_dms_sent": 0   # Would be fetched from database in production
+    }
+
+
+@app.get('/api/reels')
+async def get_reels():
+    """
+    Get all reels with their messages.
+    """
+    reels_list = [
+        {
+            "id": reel_id,
+            "message": data["message"],
+            "keyword": data.get("keyword")
+        }
+        for reel_id, data in reels_db.items()
+    ]
+    return {"reels": reels_list}
+
+
+@app.get('/api/reels/{reel_id}')
+async def get_reel(reel_id: str):
+    """
+    Get a specific reel by ID.
+    """
+    if reel_id not in reels_db:
+        raise HTTPException(status_code=404, detail="Reel not found")
+    
+    return {
+        "id": reel_id,
+        "message": reels_db[reel_id]["message"],
+        "keyword": reels_db[reel_id].get("keyword")
+    }
+
+
+@app.post('/api/reels')
+async def create_reel(reel: ReelData):
+    """
+    Create a new reel with custom message and optional keyword.
+    """
+    if reel.reel_id in reels_db:
+        raise HTTPException(status_code=400, detail="Reel already exists")
+    
+    reels_db[reel.reel_id] = {
+        "message": reel.message,
+        "keyword": reel.keyword
+    }
+    
+    return {
+        "id": reel.reel_id,
+        "message": reel.message,
+        "keyword": reel.keyword,
+        "status": "created"
+    }
+
+
+@app.put('/api/reels/{reel_id}')
+async def update_reel(reel_id: str, reel: ReelUpdate):
+    """
+    Update an existing reel's message and keyword.
+    """
+    if reel_id not in reels_db:
+        raise HTTPException(status_code=404, detail="Reel not found")
+    
+    reels_db[reel_id]["message"] = reel.message
+    reels_db[reel_id]["keyword"] = reel.keyword
+    
+    return {
+        "id": reel_id,
+        "message": reel.message,
+        "keyword": reel.keyword,
+        "status": "updated"
+    }
+
+
+@app.delete('/api/reels/{reel_id}')
+async def delete_reel(reel_id: str):
+    """
+    Delete a reel.
+    """
+    if reel_id not in reels_db:
+        raise HTTPException(status_code=404, detail="Reel not found")
+    
+    deleted = reels_db.pop(reel_id)
+    
+    return {
+        "id": reel_id,
+        "status": "deleted"
+    }
 
 
 if __name__ == '__main__':

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reel DM Bot Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #ffffff;
+            color: #111111;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background-color: #f5f5f5;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        /* Reel Messages Section */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #111111;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #111111;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #333333;
+        }
+
+        .btn-secondary {
+            background-color: #f5f5f5;
+            color: #111111;
+            border: 1px solid #e5e5e5;
+        }
+
+        .btn-secondary:hover {
+            background-color: #eeeeee;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        /* Reels List */
+        .reels-container {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .reel-card {
+            background-color: #f5f5f5;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .reel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reel-id {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #666666;
+            background-color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .reel-message {
+            font-size: 14px;
+            color: #111111;
+            line-height: 1.4;
+            word-break: break-word;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reel-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .keyword-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666666;
+        }
+
+        .reel-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-delete {
+            color: #d32f2f;
+            background: none;
+            border: 1px solid #d32f2f;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete:hover {
+            background-color: #ffebee;
+        }
+
+        /* Add/Edit Form */
+        .form-section {
+            background-color: #f5f5f5;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #111111;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            color: #111111;
+            background-color: #ffffff;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #111111;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* Inline Edit Form */
+        .reel-card.editing {
+            grid-template-columns: 1fr;
+        }
+
+        .edit-form {
+            display: grid;
+            gap: 12px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast {
+            background-color: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease forwards;
+            pointer-events: auto;
+        }
+
+        .toast.success {
+            border-left: 3px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .toast.error {
+            border-left: 3px solid #d32f2f;
+            color: #c62828;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.removing {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666666;
+        }
+
+        .empty-state p {
+            margin-bottom: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .reel-card {
+                grid-template-columns: 1fr;
+            }
+
+            .reel-actions {
+                justify-content: flex-end;
+            }
+
+            .toast-container {
+                bottom: 12px;
+                right: 12px;
+                left: 12px;
+            }
+
+            .toast {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Reel DM Bot</h1>
+            <span class="badge">● Bot active</span>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Total Reels</div>
+                <div class="stat-value" id="totalReels">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">DMs Sent Today</div>
+                <div class="stat-value" id="dmsSentToday">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total DMs Sent</div>
+                <div class="stat-value" id="totalDmsSent">0</div>
+            </div>
+        </div>
+
+        <!-- Reel Messages Section -->
+        <div class="section-header">
+            <h2 class="section-title">Reel Messages</h2>
+            <button class="btn btn-primary btn-small" onclick="scrollToForm()">+ Add reel</button>
+        </div>
+
+        <!-- Reels Container -->
+        <div class="reels-container" id="reelsContainer">
+            <div class="empty-state">
+                <p>No reels yet. Add one to get started.</p>
+            </div>
+        </div>
+
+        <!-- Add New Reel Form -->
+        <div class="form-section">
+            <h3 class="section-title" style="margin-bottom: 20px;">Add New Reel</h3>
+            <form id="addReelForm" onsubmit="handleAddReel(event)">
+                <div class="form-group">
+                    <label class="form-label">Reel ID</label>
+                    <input type="text" class="form-input" id="reelId" placeholder="e.g. 17841234567890" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Keyword (optional)</label>
+                    <input type="text" class="form-input" id="keyword" placeholder="e.g. link, info, send">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">DM Message</label>
+                    <textarea class="form-textarea" id="message" placeholder="Write your custom message..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Reel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // API Base URL
+        const API_BASE = '/api';
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadReels();
+            // Auto-refresh stats every 30 seconds
+            setInterval(loadStats, 30000);
+        });
+
+        // Load Stats
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                if (!response.ok) throw new Error('Failed to load stats');
+                const data = await response.json();
+                
+                document.getElementById('totalReels').textContent = data.total_reels || 0;
+                document.getElementById('dmsSentToday').textContent = data.dms_sent_today || 0;
+                document.getElementById('totalDmsSent').textContent = data.total_dms_sent || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load Reels
+        async function loadReels() {
+            try {
+                const response = await fetch(`${API_BASE}/reels`);
+                if (!response.ok) throw new Error('Failed to load reels');
+                const data = await response.json();
+                const reels = data.reels || [];
+                
+                renderReels(reels);
+            } catch (error) {
+                console.error('Error loading reels:', error);
+                showToast('Error loading reels', 'error');
+            }
+        }
+
+        // Render Reels
+        function renderReels(reels) {
+            const container = document.getElementById('reelsContainer');
+            
+            if (reels.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No reels yet. Add one to get started.</p></div>';
+                return;
+            }
+
+            container.innerHTML = reels.map(reel => `
+                <div class="reel-card" id="reel-${reel.id}">
+                    <div class="reel-content">
+                        <div class="reel-id">${escapeHtml(reel.id)}</div>
+                        <div class="reel-message">${escapeHtml(reel.message)}</div>
+                        <div class="reel-meta">
+                            ${reel.keyword ? `<span class="keyword-badge">keyword: ${escapeHtml(reel.keyword)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="reel-actions">
+                        <button class="btn btn-secondary btn-small" onclick="editReel('${reel.id}')">Edit</button>
+                        <button class="btn-delete" onclick="deleteReel('${reel.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Edit Reel
+        async function editReel(reelId) {
+            try {
+                const response = await fetch(`${API_BASE}/reels/${reelId}`);
+                if (!response.ok) throw new Error('Failed to load reel');
+                const reel = await response.json();
+
+                const card = document.getElementById(`reel-${reelId}`);
+                card.classList.add('editing');
+                
+                const formHtml = `
+                    <div class="edit-form">
+                        <div class="form-group">
+                            <label class="form-label">Reel ID</label>
+                            <input type="text" class="form-input" value="${escapeHtml(reel.id)}" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Keyword (optional)</label>
+                            <input type="text" class="form-input" id="edit-keyword-${reelId}" value="${escapeHtml(reel.keyword || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">DM Message</label>
+                            <textarea class="form-textarea" id="edit-message-${reelId}">${escapeHtml(reel.message)}</textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-secondary" onclick="cancelEdit('${reelId}')">Cancel</button>
+                            <button class="btn btn-primary" onclick="saveEdit('${reelId}')">Save</button>
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = formHtml;
+            } catch (error) {
+                console.error('Error editing reel:', error);
+                showToast('Error loading reel', 'error');
+            }
+        }
+
+        // Cancel Edit
+        function cancelEdit(reelId) {
+            loadReels();
+        }
+
+        // Save Edit
+        async function saveEdit(reelId) {
+            try {
+                const keyword = document.getElementById(`edit-keyword-${reelId}`).value;
+                const message = document.getElementById(`edit-message-${reelId}`).value;
+
+                if (!message.trim()) {
+                    showToast('Message cannot be empty', 'error');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/reels/${reelId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        keyword: keyword || null,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to update reel');
+                
+                showToast('Reel updated', 'success');
+                loadReels();
+                loadStats();
+            } catch (error) {
+                console.error('Error saving reel:', error);
+                showToast('Error updating reel', 'error');
+            }
+        }
+
+        // Delete Reel
+        async function deleteReel(reelId) {
+            if (!confirm('Delete this reel?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/reels/${reelId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete reel');
+                
+                showToast('Reel deleted', 'success');
+                document.getElementById(`reel-${reelId}`).remove();
+                loadStats();
+            } catch (error) {
+                console.error('Error deleting reel:', error);
+                showToast('Error deleting reel', 'error');
+            }
+        }
+
+        // Handle Add Reel
+        async function handleAddReel(event) {
+            event.preventDefault();
+
+            try {
+                const reelId = document.getElementById('reelId').value;
+                const keyword = document.getElementById('keyword').value;
+                const message = document.getElementById('message').value;
+
+                const response = await fetch(`${API_BASE}/reels`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reel_id: reelId,
+                        keyword: keyword || null,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to add reel');
+                
+                showToast('Reel added successfully', 'success');
+                resetForm();
+                loadReels();
+                loadStats();
+            } catch (error) {
+                console.error('Error adding reel:', error);
+                showToast('Error adding reel', 'error');
+            }
+        }
+
+        // Reset Form
+        function resetForm() {
+            document.getElementById('addReelForm').reset();
+        }
+
+        // Scroll to Form
+        function scrollToForm() {
+            document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('reelId').focus();
+        }
+
+        // Show Toast Notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
