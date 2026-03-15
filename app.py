@@ -103,12 +103,13 @@ def load_token_data():
 
 async def exchange_code_for_token(code: str):
     """
-    Exchange OAuth code for short-lived access token.
+    Exchange OAuth code for short-lived access token using Instagram API.
     """
-    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/oauth/access_token"
+    url = "https://api.instagram.com/oauth/access_token"
     params = {
         "client_id": APP_ID,
         "client_secret": APP_SECRET,
+        "grant_type": "authorization_code",
         "redirect_uri": REDIRECT_URI,
         "code": code
     }
@@ -122,14 +123,12 @@ async def exchange_code_for_token(code: str):
 
 async def exchange_short_token_for_long(short_token: str):
     """
-    Exchange short-lived token for long-lived token (60 days).
+    Exchange short-lived token for long-lived token (60 days) using Instagram API.
     """
-    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/oauth/access_token"
+    url = "https://api.instagram.com/oauth/access_token"
     params = {
-        "grant_type": "fb_exchange_token",
-        "client_id": APP_ID,
-        "client_secret": APP_SECRET,
-        "fb_exchange_token": short_token
+        "grant_type": "ig_refresh_token",
+        "access_token": short_token
     }
     
     async with aiohttp.ClientSession() as session:
@@ -179,9 +178,9 @@ async def get_ig_account_id(access_token: str):
 async def auth_login():
     """
     Redirect user to Instagram OAuth login page.
-    Uses the three approved Instagram Business scopes.
+    Uses Instagram API OAuth endpoint with three approved scopes.
     """
-    oauth_url = "https://www.facebook.com/v19.0/dialog/oauth"
+    oauth_url = "https://api.instagram.com/oauth/authorize"
     params = {
         "client_id": APP_ID,
         "redirect_uri": REDIRECT_URI,
@@ -384,7 +383,7 @@ async def send_dm(user_id: str, media_id: str):
 @app.get('/refresh-token')
 async def refresh_token():
     """
-    Refresh the access token using the Graph API (async).
+    Refresh the access token using Instagram API (async).
     """
     try:
         token_data = load_token_data()
@@ -392,7 +391,7 @@ async def refresh_token():
             raise HTTPException(status_code=401, detail="Not authenticated")
         
         current_token = token_data.get("access_token")
-        url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/oauth/access_token"
+        url = "https://api.instagram.com/oauth/access_token"
         params = {
             "grant_type": "ig_refresh_token",
             "access_token": current_token
