@@ -184,7 +184,7 @@ async def auth_login():
     params = {
         "client_id": APP_ID,
         "redirect_uri": REDIRECT_URI,
-        "scope": "instagram_basic,instagram_manage_comments,instagram_manage_messages,pages_read_engagement,pages_manage_metadata,pages_messaging",
+        "scope": "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,pages_read_engagement,pages_manage_metadata,pages_read_user_content",
         "response_type": "code"
     }
     
