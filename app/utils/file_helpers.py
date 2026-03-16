@@ -3,6 +3,22 @@ import os
 from datetime import datetime, timedelta
 from app.core.config import TOKEN_FILE, REELS_FILE, STATS_FILE
 
+LOG_FILE = "app.log"
+
+def append_log(message: str, level: str = "INFO"):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"[{timestamp}] [{level}] {message}\n"
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(log_entry)
+    print(log_entry.strip()) # Also print to terminal if it's visible
+
+def get_logs(limit: int = 50):
+    if not os.path.exists(LOG_FILE):
+        return []
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+        return lines[-limit:]
+
 def load_token_data():
     try:
         with open(TOKEN_FILE) as f:

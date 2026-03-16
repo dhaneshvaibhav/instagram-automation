@@ -121,6 +121,93 @@
             background-color: #eeeeee;
         }
 
+        /* Media Gallery Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 24px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .media-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .media-item:hover {
+            transform: translateY(-4px);
+            border-color: #0095f6;
+        }
+
+        .media-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            background-color: #fafafa;
+        }
+
+        .media-info {
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        .media-caption {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: #444;
+            height: 34px;
+        }
+
+        .media-type-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
         .btn-small {
             padding: 6px 12px;
             font-size: 13px;
@@ -208,6 +295,22 @@
 
         .btn-delete:hover {
             background-color: #ffebee;
+        }
+
+        .btn-test {
+            color: #0095f6;
+            background: none;
+            border: 1px solid #0095f6;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-test:hover {
+            background-color: #e0f1ff;
         }
 
         /* Add/Edit Form */
@@ -468,6 +571,50 @@
             }
         }
 
+        /* Log Section */
+        .log-section {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 32px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .log-time { color: #888; }
+        .log-level-info { color: #4fc3f7; }
+        .log-level-error { color: #f44336; }
+        .log-level-warn { color: #ffb74d; }
+
         /* Loading State */
         .loading {
             opacity: 0.6;
@@ -506,24 +653,65 @@
 
             <!-- Stats Row -->
             <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-label">Total Reels</div>
-                    <div class="stat-value" id="totalReels">0</div>
+                <div class="stat-card" style="display: flex; align-items: center; gap: 16px;">
+                    <img id="profilePic" src="" alt="Profile" style="width: 60px; height: 60px; border-radius: 50%; background-color: #eee; display: none; object-fit: cover;">
+                    <div style="flex: 1;">
+                        <div class="stat-label">Connected Account</div>
+                        <div class="stat-value" id="profileUsername" style="font-size: 18px;">Loading...</div>
+                        <div id="profileName" style="font-size: 13px; color: #555; margin-top: 2px;">Name: Loading...</div>
+                        <div id="profileBio" style="font-size: 12px; color: #666; margin-top: 4px; font-style: italic;"></div>
+                        <div id="profileId" style="font-size: 11px; color: #888; margin-top: 4px;">ID: Loading...</div>
+                    </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">DMs Sent Today</div>
                     <div class="stat-value" id="dmsSentToday">0</div>
+                    <div style="font-size: 11px; color: #888; margin-top: 4px;">Tracked across all reels</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Total DMs Sent</div>
-                    <div class="stat-value" id="totalDmsSent">0</div>
+                    <div class="stat-label">Profile Stats</div>
+                    <div style="display: flex; gap: 24px; margin-top: 8px;">
+                        <div>
+                            <div class="stat-value" id="followerCount" style="font-size: 20px;">0</div>
+                            <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Followers</div>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="followingCount" style="font-size: 20px;">0</div>
+                            <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Following</div>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="mediaCount" style="font-size: 20px;">0</div>
+                            <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Posts</div>
+                        </div>
+                    </div>
+                    <div id="accountType" style="font-size: 11px; color: #888; margin-top: 8px; font-weight: 500;">Account: Loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Connection Expiry</div>
+                    <div class="stat-value" id="expiryTimer" style="font-size: 18px;">Loading...</div>
+                    <div id="expiryDate" style="font-size: 11px; color: #888; margin-top: 4px;">Date: Loading...</div>
                 </div>
             </div>
 
-            <!-- Reel Messages Section -->
             <div class="section-header">
                 <h2 class="section-title">Reel Messages</h2>
-                <button class="btn btn-primary btn-small" onclick="scrollToForm()">+ Add reel</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary btn-small" onclick="openMediaGallery()">View My Media</button>
+                    <button class="btn btn-primary btn-small" onclick="scrollToForm()">+ Add reel</button>
+                </div>
+            </div>
+
+            <!-- Media Gallery Modal -->
+            <div id="mediaModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="section-title" id="mediaModalTitle">My Instagram Media</h2>
+                        <button class="btn btn-secondary" onclick="closeMediaGallery()">Close</button>
+                    </div>
+                    <div id="mediaGallery" class="media-grid">
+                        <div class="empty-state">Loading your media...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Reels Container -->
@@ -537,6 +725,12 @@
             <div class="form-section">
                 <h3 class="section-title" style="margin-bottom: 20px;">Add New Reel</h3>
                 <form id="addReelForm" onsubmit="handleAddReel(event)">
+                    <div class="form-group">
+                        <label class="form-label">Select Reel</label>
+                        <select class="form-input" id="reelSelector" onchange="handleReelSelect(this)">
+                            <option value="">-- Fetching Reels... --</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label class="form-label">Reel ID</label>
                         <input type="text" class="form-input" id="reelId" placeholder="e.g. 17841234567890" required>
@@ -554,6 +748,23 @@
                         <button type="submit" class="btn btn-primary">Save Reel</button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Live Logs Section -->
+            <div class="log-section">
+                <div class="log-header">
+                    <div class="log-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        Live Activity Logs
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span id="logStatus" style="font-size: 11px; color: #888;">● Polling...</span>
+                        <button class="btn btn-secondary btn-small" style="padding: 2px 8px; font-size: 11px; background: transparent; color: #888; border-color: #444;" onclick="clearLogs()">Clear UI</button>
+                    </div>
+                </div>
+                <div id="logContainer">
+                    <div class="log-entry" style="color: #888;">Waiting for activity...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -582,25 +793,54 @@
                     document.getElementById('loginScreen').style.display = 'none';
                     document.getElementById('dashboardScreen').style.display = 'block';
                     
-                    // Set expiry display
+                    // Update Profile Section
+                    document.getElementById('profileUsername').textContent = `@${data.username || 'unknown'}`;
+                    document.getElementById('profileName').textContent = data.name || 'No Name';
+                    document.getElementById('profileBio').textContent = data.biography || '';
+                    document.getElementById('profileId').textContent = `ID: ${data.ig_account_id || 'unknown'}`;
+                    
+                    if (data.profile_picture_url) {
+                        const pic = document.getElementById('profilePic');
+                        pic.src = data.profile_picture_url;
+                        pic.style.display = 'block';
+                    }
+                    
+                    // Stats
+                    document.getElementById('followerCount').textContent = (data.followers_count || 0).toLocaleString();
+                    document.getElementById('followingCount').textContent = (data.follows_count || 0).toLocaleString();
+                    document.getElementById('mediaCount').textContent = (data.media_count || 0).toLocaleString();
+                    document.getElementById('accountType').textContent = `Account: ${data.account_type || 'Professional'}`;
+                    
                     if (data.expires_at) {
                         const expiryDate = new Date(data.expires_at);
-                        const now = new Date();
-                        const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+                        document.getElementById('expiryDate').textContent = expiryDate.toLocaleTimeString();
                         
-                        document.getElementById('expiryDisplay').textContent = `expires in ${daysLeft} days`;
+                        const mins = data.minutes_left || 0;
+                        const days = data.days_left || 0;
                         
-                        // Show warning if less than 10 days
-                        if (daysLeft < 10) {
-                            showWarningBanner(daysLeft);
+                        if (mins <= 0) {
+                            document.getElementById('expiryTimer').textContent = "Expired";
+                            document.getElementById('expiryTimer').style.color = "#d32f2f";
+                        } else if (days >= 1) {
+                            document.getElementById('expiryTimer').textContent = `${days}d left`;
+                            document.getElementById('expiryTimer').style.color = "#2e7d32";
+                            // Show refresh warning if less than 10 days left
+                            if (days < 10) showWarningBanner(days);
+                        } else {
+                            document.getElementById('expiryTimer').textContent = `${mins}m left`;
+                            document.getElementById('expiryTimer').style.color = "#2e7d32";
                         }
                     }
                     
                     // Load dashboard data
                     loadStats();
                     loadReels();
+                    fetchInstagramReels();
+                    fetchLogs();
                     // Auto-refresh stats every 30 seconds
                     setInterval(loadStats, 30000);
+                    // Auto-refresh logs every 3 seconds
+                    setInterval(fetchLogs, 3000);
                 } else {
                     // User is not connected, show login screen
                     document.getElementById('loginScreen').style.display = 'flex';
@@ -629,7 +869,7 @@
         // Handle Token Refresh
         async function handleTokenRefresh() {
             try {
-                const response = await fetch(`${API_BASE}/api/refresh-token`);
+                const response = await fetch(`${API_BASE}/auth/refresh-token`);
                 if (!response.ok) throw new Error('Failed to refresh token');
                 const data = await response.json();
                 
@@ -664,17 +904,141 @@
             }
         }
         
+        let lastLogCount = 0;
+        async function fetchLogs() {
+            try {
+                const response = await fetch(`${API_BASE}/api/logs`);
+                if (!response.ok) throw new Error('Failed to fetch logs');
+                const data = await response.json();
+                const logs = data.logs || [];
+                
+                if (logs.length === 0) return;
+                
+                // Only update if we have new logs
+                if (logs.length !== lastLogCount) {
+                    const container = document.getElementById('logContainer');
+                    container.innerHTML = logs.map(log => {
+                        // Extract [Timestamp] [LEVEL] Message
+                        const match = log.match(/^\[(.*?)\] \[(.*?)\] (.*)$/);
+                        if (match) {
+                            const [_, time, level, msg] = match;
+                            const levelClass = `log-level-${level.toLowerCase()}`;
+                            return `<div class="log-entry"><span class="log-time">[${time}]</span> <span class="${levelClass}">[${level}]</span> ${escapeHtml(msg)}</div>`;
+                        }
+                        return `<div class="log-entry">${escapeHtml(log)}</div>`;
+                    }).join('');
+                    
+                    // Auto scroll to bottom
+                    const section = document.querySelector('.log-section');
+                    section.scrollTop = section.scrollHeight;
+                    lastLogCount = logs.length;
+                }
+            } catch (error) {
+                console.error('Error fetching logs:', error);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry" style="color: #888;">Logs cleared (UI only)</div>';
+            lastLogCount = 0;
+        }
+
         async function loadStats() {
             try {
                 const response = await fetch(`${API_BASE}/api/stats`);
                 if (!response.ok) throw new Error('Failed to load stats');
                 const data = await response.json();
                 
-                document.getElementById('totalReels').textContent = data.total_reels || 0;
                 document.getElementById('dmsSentToday').textContent = data.dms_sent_today || 0;
-                document.getElementById('totalDmsSent').textContent = data.total_dms_sent || 0;
             } catch (error) {
                 console.error('Error loading stats:', error);
+            }
+        }
+
+        // Cache for Instagram Media
+        let cachedIgMedia = [];
+
+        // Fetch Instagram Reels
+        async function fetchInstagramReels() {
+            try {
+                const response = await fetch(`${API_BASE}/api/reels/instagram`);
+                if (!response.ok) throw new Error('Failed to fetch instagram reels');
+                const data = await response.json();
+                cachedIgMedia = data.reels || [];
+                
+                const selector = document.getElementById('reelSelector');
+                if (cachedIgMedia.length === 0) {
+                    selector.innerHTML = '<option value="">No reels found on account</option>';
+                    return;
+                }
+                
+                selector.innerHTML = '<option value="">-- Select a Reel to auto-fill --</option>' + 
+                    cachedIgMedia.map(r => `
+                        <option value="${r.id}" data-caption="${escapeHtml(r.caption || '')}">
+                            ${r.id} - ${r.caption ? r.caption.substring(0, 30) + '...' : 'No caption'}
+                        </option>
+                    `).join('');
+                
+                // Update Gallery if open
+                if (document.getElementById('mediaModal').style.display === 'block') {
+                    renderMediaGallery(cachedIgMedia);
+                }
+            } catch (error) {
+                console.error('Error fetching instagram reels:', error);
+                document.getElementById('reelSelector').innerHTML = '<option value="">Error fetching reels</option>';
+            }
+        }
+
+        // Open/Close Media Gallery
+        function openMediaGallery() {
+            document.getElementById('mediaModal').style.display = 'block';
+            renderMediaGallery(cachedIgMedia);
+            if (cachedIgMedia.length === 0) {
+                fetchInstagramReels();
+            }
+        }
+
+        function closeMediaGallery() {
+            document.getElementById('mediaModal').style.display = 'none';
+        }
+
+        // Render Media Gallery
+        function renderMediaGallery(media) {
+            const container = document.getElementById('mediaGallery');
+            if (!media || media.length === 0) {
+                container.innerHTML = '<div class="empty-state">No media found or still loading...</div>';
+                return;
+            }
+
+            container.innerHTML = media.map(item => `
+                <div class="media-item" onclick="selectFromGallery('${item.id}', '${escapeHtml(item.caption || '')}')">
+                    <span class="media-type-icon">${item.media_type || 'MEDIA'}</span>
+                    <img class="media-thumb" src="${item.thumbnail_url || item.media_url}" alt="Thumbnail">
+                    <div class="media-info">
+                        <div class="media-caption">${escapeHtml(item.caption || 'No caption')}</div>
+                        <div style="font-size: 10px; color: #888; margin-top: 4px;">ID: ${item.id}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectFromGallery(id, caption) {
+            document.getElementById('reelId').value = id;
+            document.getElementById('message').placeholder = `Suggested for: ${caption}`;
+            closeMediaGallery();
+            scrollToForm();
+            showToast('Reel selected!', 'success');
+        }
+
+        // Handle Reel Selection
+        function handleReelSelect(select) {
+            if (select.value) {
+                document.getElementById('reelId').value = select.value;
+                const option = select.options[select.selectedIndex];
+                const caption = option.getAttribute('data-caption');
+                if (caption) {
+                    document.getElementById('message').placeholder = `Suggested for: ${caption}`;
+                }
             }
         }
 
@@ -712,11 +1076,43 @@
                         </div>
                     </div>
                     <div class="reel-actions">
+                        <button class="btn-test" onclick="handleTestDm('${reel.id}')">Test DM</button>
                         <button class="btn btn-secondary btn-small" onclick="editReel('${reel.id}')">Edit</button>
                         <button class="btn-delete" onclick="deleteReel('${reel.id}')">Delete</button>
                     </div>
                 </div>
             `).join('');
+        }
+
+        // Handle Test DM
+        async function handleTestDm(mediaId) {
+            const myId = document.getElementById('profileId').textContent.replace('ID: ', '');
+            alert("NOTE: Test DMs use the standard messaging endpoint. Instagram ONLY allows this if the recipient has messaged your account in the last 24 hours.\n\nFor real automation, the bot uses 'Private Replies' which works even if the user hasn't messaged you first.");
+            
+            const userId = prompt(`Enter an Instagram User ID to send a test DM to.\n\nType 'me' to send to yourself (${myId}):`, 'me');
+            if (!userId) return;
+
+            try {
+                showToast('Sending test DM...', 'info');
+                const response = await fetch(`${API_BASE}/api/reels/test-dm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        media_id: mediaId
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to send test DM');
+                }
+                
+                showToast('Test DM sent successfully!', 'success');
+            } catch (error) {
+                console.error('Error sending test DM:', error);
+                showToast(error.message, 'error');
+            }
         }
 
         // Edit Reel
