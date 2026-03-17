@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
-import { X, Image, Video } from 'lucide-react';
+import { X, Video } from 'lucide-react';
 
 const MediaGallery = ({ onClose }) => {
   const [media, setMedia] = useState([]);
@@ -21,12 +21,8 @@ const MediaGallery = ({ onClose }) => {
   }, []);
 
   const handleSelect = (item) => {
-    // Populate form if it exists
     const reelIdInput = document.getElementById('reelId');
     if (reelIdInput) {
-      // React specific way to trigger change event on external components is tricky
-      // Better to use a context or callback, but for now we'll just close and let user copy ID
-      // Or better: dispatch a custom event or just alert the ID
       alert(`Selected ID: ${item.id}. Please paste this into the Reel ID field.`);
       onClose();
     }
@@ -35,36 +31,64 @@ const MediaGallery = ({ onClose }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2 className="section-title">My Instagram Media</h2>
-          <button className="btn btn-secondary" onClick={onClose}>
-            <X size={16} /> Close
+        <div className="header" style={{ marginBottom: 'var(--spacing-md)', paddingBottom: 'var(--spacing-sm)' }}>
+          <h2 style={{ fontSize: '1.25rem' }}>My Instagram Media</h2>
+          <button className="btn btn-ghost btn-small" onClick={onClose}>
+            <X size={20} />
           </button>
         </div>
         
-        <div className="media-grid">
+        <div className="media-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--spacing-md)' }}>
           {loading ? (
-            <div className="empty-state">Loading your media...</div>
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading your media...</div>
           ) : media.length === 0 ? (
-            <div className="empty-state">No media found.</div>
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No media found.</div>
           ) : (
             media.map(item => (
-              <div key={item.id} className="media-item" onClick={() => handleSelect(item)}>
+              <div 
+                key={item.id} 
+                className="media-item" 
+                onClick={() => handleSelect(item)}
+                style={{ 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: 'var(--radius-md)', 
+                  overflow: 'hidden', 
+                  cursor: 'pointer', 
+                  position: 'relative',
+                  transition: 'transform 0.2s',
+                  backgroundColor: 'var(--bg-subtle)'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+              >
                 {item.media_type === 'IMAGE' || item.thumbnail_url ? (
                   <img 
                     src={item.thumbnail_url || item.media_url} 
                     alt="Thumbnail" 
-                    className="media-thumb" 
+                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover' }}
                   />
                 ) : (
-                  <div className="media-thumb" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Video size={32} color="#ccc" />
+                  <div style={{ width: '100%', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e2e8f0' }}>
+                    <Video size={32} color="#94a3b8" />
                   </div>
                 )}
-                <div className="media-type-icon">{item.media_type}</div>
-                <div className="media-info">
-                  <div className="media-caption">{item.caption || 'No Caption'}</div>
-                  <div style={{ marginTop: '4px', color: '#888' }}>ID: {item.id}</div>
+                <div style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                  {item.media_type}
+                </div>
+                <div style={{ padding: '8px' }}>
+                  <div style={{ 
+                    display: '-webkit-box', 
+                    WebkitLineClamp: 2, 
+                    WebkitBoxOrient: 'vertical', 
+                    overflow: 'hidden', 
+                    fontSize: '0.8rem', 
+                    height: '2.4em', 
+                    lineHeight: '1.2',
+                    marginBottom: '4px'
+                  }}>
+                    {item.caption || 'No Caption'}
+                  </div>
+                  <div className="text-xs text-muted">ID: {item.id}</div>
                 </div>
               </div>
             ))

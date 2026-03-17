@@ -104,7 +104,7 @@ const AddReelForm = ({ onReelAdded }) => {
           required
         ></textarea>
       </div>
-      <div className="form-actions">
+      <div className="form-actions" style={{ display: 'flex', gap: 'var(--spacing-sm)', justifyContent: 'flex-end', marginTop: 'var(--spacing-md)' }}>
         <button type="button" className="btn btn-secondary" onClick={() => setFormData({ reelId: '', keyword: '', message: '' })}>
           Clear
         </button>

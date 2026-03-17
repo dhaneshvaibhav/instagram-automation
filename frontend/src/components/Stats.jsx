@@ -20,8 +20,8 @@ const Stats = ({ user, refreshTrigger }) => {
   }, [refreshTrigger]);
 
   return (
-    <div className="stats-row">
-      <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+    <div className="stats-grid">
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {user.profile_picture_url && (
           <img 
             src={user.profile_picture_url} 
@@ -30,46 +30,38 @@ const Stats = ({ user, refreshTrigger }) => {
           />
         )}
         <div style={{ flex: 1 }}>
-          <div className="stat-label">Connected Account</div>
-          <div className="stat-value" style={{ fontSize: '18px' }}>@{user.username || 'unknown'}</div>
-          <div style={{ fontSize: '13px', color: '#555', marginTop: '2px' }}>Name: {user.name}</div>
-          <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>ID: {user.ig_account_id}</div>
+          <div className="text-small text-muted" style={{ marginBottom: '4px' }}>Connected Account</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>@{user.username || 'unknown'}</div>
+          <div className="text-small text-muted">ID: {user.ig_account_id}</div>
         </div>
       </div>
       
-      <div className="stat-card">
-        <div className="stat-label">DMs Sent Today</div>
-        <div className="stat-value">{stats.dms_sent_today}</div>
-        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>Tracked across all reels</div>
+      <div className="card">
+        <div className="text-small text-muted" style={{ marginBottom: '8px' }}>DMs Sent Today</div>
+        <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{stats.dms_sent_today}</div>
+        <div className="text-xs text-muted" style={{ marginTop: '4px' }}>Tracked across all reels</div>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-label">Profile Stats</div>
-        <div style={{ display: 'flex', gap: '24px', marginTop: '8px' }}>
+      <div className="card">
+        <div className="text-small text-muted" style={{ marginBottom: '8px' }}>Profile Stats</div>
+        <div style={{ display: 'flex', gap: '24px' }}>
           <div>
-            <div className="stat-value" style={{ fontSize: '20px' }}>{user.followers_count?.toLocaleString() || 0}</div>
-            <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Followers</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{user.followers_count?.toLocaleString() || 0}</div>
+            <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>Followers</div>
           </div>
           <div>
-            <div className="stat-value" style={{ fontSize: '20px' }}>{user.follows_count?.toLocaleString() || 0}</div>
-            <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Following</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{user.follows_count?.toLocaleString() || 0}</div>
+            <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>Following</div>
           </div>
-          <div>
-            <div className="stat-value" style={{ fontSize: '20px' }}>{user.media_count?.toLocaleString() || 0}</div>
-            <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Posts</div>
-          </div>
-        </div>
-        <div style={{ fontSize: '11px', color: '#888', marginTop: '8px', fontWeight: 500 }}>
-          Account: {user.account_type || 'Professional'}
         </div>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-label">Connection Expiry</div>
-        <div className="stat-value" style={{ fontSize: '18px', color: (user.days_left || 0) < 1 ? '#d32f2f' : '#2e7d32' }}>
+      <div className="card">
+        <div className="text-small text-muted" style={{ marginBottom: '8px' }}>Connection Expiry</div>
+        <div style={{ fontSize: '1.25rem', fontWeight: 600, color: (user.days_left || 0) < 1 ? 'var(--danger)' : 'var(--success)' }}>
           {(user.days_left || 0) < 1 ? 'Expired' : `${user.days_left}d left`}
         </div>
-        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+        <div className="text-xs text-muted" style={{ marginTop: '4px' }}>
           Date: {user.expires_at ? new Date(user.expires_at).toLocaleTimeString() : 'N/A'}
         </div>
       </div>

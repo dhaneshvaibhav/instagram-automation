@@ -9,7 +9,6 @@ const ReelsList = ({ refreshTrigger }) => {
   const fetchReels = async () => {
     try {
       const response = await api.get('/api/reels');
-      // Backend returns { reels: [...] }
       setReels(response.data.reels || []);
     } catch (error) {
       console.error('Error fetching reels:', error);
@@ -43,37 +42,37 @@ const ReelsList = ({ refreshTrigger }) => {
     }
   };
 
-  if (loading) return <div className="empty-state">Loading reels...</div>;
+  if (loading) return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading reels...</div>;
 
   if (reels.length === 0) {
     return (
-      <div className="reels-container">
-        <div className="empty-state">
-          <p>No reels yet. Add one to get started.</p>
-        </div>
+      <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+        <p>No reels yet. Add one to get started.</p>
       </div>
     );
   }
 
   return (
-    <div className="reels-container">
+    <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
       {reels.map((reel) => (
-        <div key={reel.id} className="reel-card">
-          <div className="reel-content">
-            <span className="reel-id">ID: {reel.id}</span>
-            <div className="reel-message">{reel.message}</div>
-            <div className="reel-meta">
+        <div key={reel.id} className="reel-card" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div>
+              <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{reel.id}</span>
+            </div>
+            <div style={{ fontSize: '0.95rem', lineHeight: '1.4', maxWidth: '600px' }}>{reel.message}</div>
+            <div>
               {reel.keyword && (
-                <span className="keyword-badge">Keyword: {reel.keyword}</span>
+                <span className="badge badge-info">Keyword: {reel.keyword}</span>
               )}
             </div>
           </div>
-          <div className="reel-actions">
-            <button className="btn-test" onClick={() => handleTest(reel.id)} title="Send Test DM">
-              <Send size={16} /> Test
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn btn-secondary btn-small" onClick={() => handleTest(reel.id)} title="Send Test DM">
+              <Send size={14} style={{ marginRight: '4px' }} /> Test
             </button>
-            <button className="btn-delete" onClick={() => handleDelete(reel.id)} title="Stop Tracking">
-              <Trash2 size={16} /> Delete
+            <button className="btn btn-danger btn-small" onClick={() => handleDelete(reel.id)} title="Stop Tracking">
+              <Trash2 size={14} style={{ marginRight: '4px' }} /> Delete
             </button>
           </div>
         </div>

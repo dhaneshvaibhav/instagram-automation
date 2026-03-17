@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
-import { RefreshCw, Power } from 'lucide-react';
 import Stats from './Stats';
 import ReelsList from './ReelsList';
 import AddReelForm from './AddReelForm';
@@ -33,15 +32,15 @@ const Dashboard = ({ user, onLogout }) => {
     <div className="container">
       {/* Header */}
       <div className="header">
-        <h1>Reel DM Bot</h1>
+        <h1 className="header-title">Reel DM Bot</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className="badge">● Connected</span>
+          <span className="badge badge-success">● Connected</span>
           {user.expires_at && (
-            <span style={{ fontSize: '12px', color: '#666666' }}>
+            <span className="text-small text-muted">
                Expires in {daysLeft} days
             </span>
           )}
-          <button className="disconnect-link" onClick={onLogout}>
+          <button className="btn btn-ghost btn-small" onClick={onLogout}>
             Disconnect
           </button>
         </div>
@@ -49,8 +48,8 @@ const Dashboard = ({ user, onLogout }) => {
 
       {/* Warning Banner */}
       {showWarning && (
-        <div className="warning-banner">
-          <span className="warning-text">
+        <div className="card" style={{ backgroundColor: 'var(--warning-bg)', borderColor: 'var(--warning)', marginBottom: 'var(--spacing-lg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: 'var(--warning)', fontWeight: 500 }}>
             Your token expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}. Refresh now
           </span>
           <button className="btn btn-primary btn-small" onClick={handleRefreshToken}>
@@ -63,8 +62,8 @@ const Dashboard = ({ user, onLogout }) => {
       <Stats user={user} refreshTrigger={refreshTrigger} />
 
       {/* Reel Messages Section */}
-      <div className="section-header">
-        <h2 className="section-title">Reel Messages</h2>
+      <div className="header" style={{ marginBottom: 'var(--spacing-md)', paddingBottom: 'var(--spacing-md)', borderBottom: 'none' }}>
+        <h2 style={{ fontSize: '1.25rem' }}>Reel Messages</h2>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
             className="btn btn-secondary btn-small" 
@@ -90,8 +89,8 @@ const Dashboard = ({ user, onLogout }) => {
       <ReelsList refreshTrigger={refreshTrigger} />
 
       {/* Add New Reel Form */}
-      <div id="addReelForm" className="form-section">
-        <h3 className="section-title" style={{ marginBottom: '20px' }}>Add New Reel</h3>
+      <div id="addReelForm" className="card" style={{ marginTop: 'var(--spacing-xl)' }}>
+        <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1.1rem' }}>Add New Reel</h3>
         <AddReelForm onReelAdded={handleRefresh} />
       </div>
 

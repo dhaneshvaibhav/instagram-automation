@@ -33,14 +33,14 @@ const LogViewer = () => {
     if (match) {
       const [_, time, level, msg] = match;
       let color = '#d4d4d4';
-      if (level === 'INFO') color = '#4fc3f7';
-      if (level === 'ERROR') color = '#f44336';
-      if (level === 'WARN') color = '#ffb74d';
+      if (level === 'INFO') color = '#60a5fa'; // Blue-400
+      if (level === 'ERROR') color = '#f87171'; // Red-400
+      if (level === 'WARN') color = '#fbbf24';  // Amber-400
       
       return (
         <>
-          <span className="log-time">[{time}]</span>{' '}
-          <span style={{ color }}>[{level}]</span>{' '}
+          <span style={{ color: '#9ca3af' }}>[{time}]</span>{' '}
+          <span style={{ color, fontWeight: 500 }}>[{level}]</span>{' '}
           {msg}
         </>
       );
@@ -49,29 +49,29 @@ const LogViewer = () => {
   };
 
   return (
-    <div className="log-section" ref={logContainerRef}>
-      <div className="log-header" style={{ position: 'sticky', top: 0, backgroundColor: '#1e1e1e', zIndex: 10 }}>
-        <div className="log-title">
+    <div className="log-section" style={{ marginTop: 'var(--spacing-xl)', borderRadius: 'var(--radius-lg)', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+      <div className="log-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #334155', backgroundColor: '#1e293b', borderTopLeftRadius: 'var(--radius-lg)', borderTopRightRadius: 'var(--radius-lg)' }}>
+        <div className="log-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
           <Terminal size={16} />
           Live Activity Logs
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', color: '#888' }}>● Polling...</span>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>● Polling...</span>
           <button 
-            className="btn btn-secondary btn-small" 
-            style={{ padding: '2px 8px', fontSize: '11px', background: 'transparent', color: '#888', borderColor: '#444' }}
+            className="btn btn-ghost btn-small" 
+            style={{ padding: '2px 8px', fontSize: '0.75rem', color: '#94a3b8' }}
             onClick={() => setLogs([])}
           >
             <Eraser size={12} style={{ marginRight: '4px' }}/> Clear UI
           </button>
         </div>
       </div>
-      <div id="logContainer">
+      <div id="logContainer" ref={logContainerRef} style={{ height: '300px', overflowY: 'auto', padding: '16px' }}>
         {logs.length === 0 ? (
-          <div className="log-entry" style={{ color: '#888' }}>Waiting for activity...</div>
+          <div style={{ color: '#64748b', fontStyle: 'italic' }}>Waiting for activity...</div>
         ) : (
           logs.map((log, index) => (
-            <div key={index} className="log-entry">
+            <div key={index} style={{ marginBottom: '4px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
               {parseLog(log)}
             </div>
           ))

@@ -1,15 +1,24 @@
 import React from 'react';
 import { Instagram } from 'lucide-react';
-import api from '../api';
 
 const Login = () => {
   return (
     <div className="login-screen">
       <div className="login-card">
-        <Instagram className="instagram-logo" size={64} />
-        <h2>Connect your Instagram</h2>
-        <p>Login to start sending automatic DMs to your loyal followers</p>
-        <a href="http://localhost:5000/auth/login" className="btn-connect" style={{ display: 'block', textDecoration: 'none', lineHeight: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--spacing-lg)' }}>
+          <div style={{ padding: '16px', borderRadius: '50%', backgroundColor: 'var(--bg-subtle)' }}>
+            <Instagram size={48} color="var(--primary)" />
+          </div>
+        </div>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: 'var(--spacing-sm)' }}>Connect your Instagram</h2>
+        <p className="text-muted" style={{ marginBottom: 'var(--spacing-xl)' }}>
+          Login to start sending automatic DMs to your loyal followers
+        </p>
+        <a 
+          href="http://localhost:5000/auth/login" 
+          className="btn btn-primary" 
+          style={{ display: 'flex', textDecoration: 'none', width: '100%', padding: '12px' }}
+        >
           Connect Instagram
         </a>
       </div>
