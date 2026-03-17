@@ -741,7 +741,7 @@
                         <input type="text" class="form-input" id="keyword" placeholder="e.g. link, info, send">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">DM Message</label>
+                        <label class="form-label">DM Message (Text to send)</label>
                         <textarea class="form-textarea" id="message" placeholder="Write your custom message..." required></textarea>
                     </div>
                     <div class="form-actions">
@@ -1066,19 +1066,18 @@
                 const data = await response.json();
                 const reels = data.reels || [];
                 
-                renderReels(reels);
+                renderReelCards(reels);
             } catch (error) {
                 console.error('Error loading reels:', error);
                 showToast('Error loading reels', 'error');
             }
         }
 
-        // Render Reels
-        function renderReels(reels) {
+        // Render Reel Cards
+        function renderReelCards(reels) {
             const container = document.getElementById('reelsContainer');
-            
             if (reels.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No reels yet. Add one to get started.</p></div>';
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #888; background: #fafafa; border-radius: 12px; border: 1px dashed #ddd;">No reels configured. Add one below!</div>';
                 return;
             }
 
@@ -1152,12 +1151,12 @@
                             <input type="text" class="form-input" id="edit-keyword-${reelId}" value="${escapeHtml(reel.keyword || '')}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">DM Message</label>
+                            <label class="form-label">DM Message (Text to send)</label>
                             <textarea class="form-textarea" id="edit-message-${reelId}">${escapeHtml(reel.message)}</textarea>
                         </div>
                         <div class="form-actions">
                             <button class="btn btn-secondary" onclick="cancelEdit('${reelId}')">Cancel</button>
-                            <button class="btn btn-primary" onclick="saveEdit('${reelId}')">Save</button>
+                            <button class="btn btn-primary" onclick="saveEdit('${reelId}')">Save Changes</button>
                         </div>
                     </div>
                 `;

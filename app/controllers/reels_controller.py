@@ -45,6 +45,17 @@ async def list_reels():
         ]
     }
 
+async def get_reel_by_id(reel_id: str):
+    reels = load_reels()
+    if reel_id not in reels:
+        raise HTTPException(status_code=404, detail="Reel not found")
+    reel = reels[reel_id]
+    return {
+        "id": reel_id,
+        "message": reel.get("message"),
+        "keyword": reel.get("keyword")
+    }
+
 async def create_reel(reel: ReelData):
     reels = load_reels()
     if reel.reel_id in reels:

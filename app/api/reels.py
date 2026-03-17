@@ -16,6 +16,10 @@ async def test_dm_route(data: dict):
 async def get_reels():
     return await reels_controller.list_reels()
 
+@router.get('/{reel_id}')
+async def get_reel_by_id(reel_id: str):
+    return await reels_controller.get_reel_by_id(reel_id)
+
 @router.post('')
 async def create_reel(reel: ReelData):
     return await reels_controller.create_reel(reel)

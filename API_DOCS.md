@@ -124,3 +124,4 @@ Endpoint for Instagram Real-time Updates.
 ### **GET `/health`**
 - **Description**: Basic health check for the application.
 - **Returns**: `status`, `instagram_connected`, `total_reels`.
+

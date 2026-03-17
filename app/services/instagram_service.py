@@ -25,14 +25,22 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
         else:
             message = DEFAULT_MESSAGE
 
-        # This API (Instagram Login) ONLY supports the standard messaging endpoint.
-        # It requires the user to have messaged you first in the last 24 hours.
-        url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
-        payload = {
-            "recipient": {"id": user_id},
-            "message": {"text": message}
-        }
-        append_log(f"ℹ Using Instagram Messaging endpoint for user {user_id}")
+        # This API (Instagram Login) supports the 'comment_id' recipient type
+        # for automated DMs in response to a comment.
+        if comment_id:
+            url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
+            payload = {
+                "recipient": {"comment_id": comment_id},
+                "message": {"text": message}
+            }
+            append_log(f"ℹ Using Instagram Messaging endpoint with comment_id {comment_id}")
+        else:
+            url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
+            payload = {
+                "recipient": {"id": user_id},
+                "message": {"text": message}
+            }
+            append_log(f"ℹ Using standard user_id messaging endpoint for user {user_id}")
 
         headers = {
             "Authorization": f"Bearer {access_token}",
