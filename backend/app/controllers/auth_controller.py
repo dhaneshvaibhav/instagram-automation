@@ -1,5 +1,4 @@
 import os
-import json
 from datetime import datetime, timedelta
 from fastapi import HTTPException, Query
 from fastapi.responses import RedirectResponse

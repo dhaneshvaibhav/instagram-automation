@@ -1,9 +1,7 @@
-import json
 import os
 from datetime import datetime, timedelta
 from sqlmodel import Session, select
 from app.core.db import engine, Token, Reel, Stats
-from app.core.config import TOKEN_FILE, REELS_FILE, STATS_FILE
 
 LOG_FILE = "app.log"
 
