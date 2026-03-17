@@ -5,7 +5,7 @@ import ReelsList from './ReelsList';
 import AddReelForm from './AddReelForm';
 import LogViewer from './LogViewer';
 import MediaGallery from './MediaGallery';
-import { Instagram } from 'lucide-react';
+import { Instagram, Zap } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showMediaGallery, setShowMediaGallery] = useState(false);

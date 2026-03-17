@@ -34,11 +34,15 @@ const ReelsList = ({ refreshTrigger }) => {
 
   const handleTest = async (id) => {
     try {
-      await api.post(`/api/reels/${id}/test`);
-      alert('Test DM sent! Check your logs.');
+      // Corrected to match the backend endpoint /api/reels/test-dm
+      await api.post('/api/reels/test-dm', {
+        user_id: 'me',
+        media_id: id
+      });
+      alert('Test DM triggered! Check your activity logs for success/failure.');
     } catch (error) {
       console.error('Error sending test DM:', error);
-      alert('Failed to send test DM');
+      alert('Failed to send test DM. See console for details.');
     }
   };
 

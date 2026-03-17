@@ -34,7 +34,7 @@ const AppContent = () => {
     try {
       await api.get('/auth/logout');
       setUser(null);
-      navigate('/');
+      navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
     }
