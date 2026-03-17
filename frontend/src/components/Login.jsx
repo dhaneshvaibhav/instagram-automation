@@ -27,7 +27,7 @@ const Login = ({ onBack }) => {
           </p>
           
           <a 
-            href="http://localhost:5000/auth/login" 
+            href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/login`} 
             className="btn btn-primary" 
             style={{ 
               display: 'flex', width: '100%', padding: '16px', fontSize: '1rem',
