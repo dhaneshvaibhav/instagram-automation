@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import RedirectResponse
-from app.core.config import APP_ID, REDIRECT_URI, TOKEN_FILE
+from app.core.config import APP_ID, REDIRECT_URI, TOKEN_FILE, FRONTEND_URL
 from app.services.token_service import (
     exchange_code_for_token, 
     fetch_ig_profile, 
@@ -102,7 +102,7 @@ async def auth_callback(
             json.dump(data, f, indent=2)
             
         print(f"✓ Connected: @{username}")
-        return RedirectResponse(url="/")
+        return RedirectResponse(url=f"{FRONTEND_URL}/")
 
     except Exception as e:
         print(f"✗ Callback error: {e}")
@@ -176,4 +176,4 @@ async def auth_logout():
             print("✓ Logged out")
     except Exception as e:
         print(f"Logout error: {e}")
-    return RedirectResponse(url="/")
+    return RedirectResponse(url=f"{FRONTEND_URL}/")
