@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { X, Video } from 'lucide-react';
 
-const MediaGallery = ({ onClose }) => {
+const MediaGallery = ({ onClose, onSelect }) => {
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,9 +21,8 @@ const MediaGallery = ({ onClose }) => {
   }, []);
 
   const handleSelect = (item) => {
-    const reelIdInput = document.getElementById('reelId');
-    if (reelIdInput) {
-      alert(`Selected ID: ${item.id}. Please paste this into the Reel ID field.`);
+    if (onSelect) {
+      onSelect(item.id);
       onClose();
     }
   };

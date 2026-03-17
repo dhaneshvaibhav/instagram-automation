@@ -5,23 +5,39 @@ import ReelsList from './ReelsList';
 import AddReelForm from './AddReelForm';
 import LogViewer from './LogViewer';
 import MediaGallery from './MediaGallery';
+import { Instagram } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedReelId, setSelectedReelId] = useState('');
+  const [notification, setNotification] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const handleRefresh = () => {
     setRefreshTrigger(prev => prev + 1);
+    showToast('Dashboard updated');
   };
 
   const handleRefreshToken = async () => {
     try {
       await api.get('/auth/refresh-token');
-      window.location.reload();
+      showToast('Token refreshed! Reloading...');
+      setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
       console.error('Failed to refresh token', error);
-      alert('Failed to refresh token');
+      showToast('Failed to refresh token', 'danger');
     }
+  };
+
+  const handleMediaSelect = (id) => {
+    setSelectedReelId(id);
+    document.getElementById('addReelForm').scrollIntoView({ behavior: 'smooth' });
+    showToast(`Selected Reel: ${id}`);
   };
 
   // Calculate days left
@@ -32,7 +48,10 @@ const Dashboard = ({ user, onLogout }) => {
     <div className="container">
       {/* Header */}
       <div className="header">
-        <h1 className="header-title">Reel DM Bot</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Zap size={32} fill="var(--primary)" color="var(--primary)" />
+          <h1 className="header-title" style={{ margin: 0 }}>Reelzy</h1>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span className="badge badge-success">● Connected</span>
           {user.expires_at && (
@@ -61,6 +80,18 @@ const Dashboard = ({ user, onLogout }) => {
       {/* Stats Row */}
       <Stats user={user} refreshTrigger={refreshTrigger} />
 
+      {/* Toast Notification */}
+      {notification && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px', zIndex: 100,
+          animation: 'modalSlideIn 0.3s ease'
+        }}>
+          <div className={`badge badge-${notification.type}`} style={{ padding: '12px 20px', boxShadow: 'var(--shadow-lg)', fontSize: '0.9rem' }}>
+            {notification.message}
+          </div>
+        </div>
+      )}
+
       {/* Reel Messages Section */}
       <div className="header" style={{ marginBottom: 'var(--spacing-md)', paddingBottom: 'var(--spacing-md)', borderBottom: 'none' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Reel Messages</h2>
@@ -82,7 +113,10 @@ const Dashboard = ({ user, onLogout }) => {
 
       {/* Media Gallery Modal */}
       {showMediaGallery && (
-        <MediaGallery onClose={() => setShowMediaGallery(false)} />
+        <MediaGallery 
+          onClose={() => setShowMediaGallery(false)} 
+          onSelect={handleMediaSelect}
+        />
       )}
 
       {/* Reels List */}
@@ -91,7 +125,10 @@ const Dashboard = ({ user, onLogout }) => {
       {/* Add New Reel Form */}
       <div id="addReelForm" className="card" style={{ marginTop: 'var(--spacing-xl)' }}>
         <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1.1rem' }}>Add New Reel</h3>
-        <AddReelForm onReelAdded={handleRefresh} />
+        <AddReelForm 
+          onReelAdded={handleRefresh} 
+          externalReelId={selectedReelId}
+        />
       </div>
 
       {/* Live Logs Section */}

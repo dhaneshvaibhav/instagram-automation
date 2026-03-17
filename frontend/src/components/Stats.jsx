@@ -15,7 +15,11 @@ const Stats = ({ user, refreshTrigger }) => {
     };
 
     fetchStats();
-    const interval = setInterval(fetchStats, 30000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchStats();
+      }
+    }, 30000);
     return () => clearInterval(interval);
   }, [refreshTrigger]);
 

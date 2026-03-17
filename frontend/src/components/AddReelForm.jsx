@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 
-const AddReelForm = ({ onReelAdded }) => {
+const AddReelForm = ({ onReelAdded, externalReelId }) => {
   const [formData, setFormData] = useState({
     reelId: '',
     keyword: '',
@@ -9,6 +9,13 @@ const AddReelForm = ({ onReelAdded }) => {
   });
   const [igReels, setIgReels] = useState([]);
   const [loadingReels, setLoadingReels] = useState(false);
+
+  // Sync external selection from Gallery
+  useEffect(() => {
+    if (externalReelId) {
+      setFormData(prev => ({ ...prev, reelId: externalReelId }));
+    }
+  }, [externalReelId]);
 
   useEffect(() => {
     const fetchIgReels = async () => {
@@ -46,10 +53,9 @@ const AddReelForm = ({ onReelAdded }) => {
       });
       setFormData({ reelId: '', keyword: '', message: '' });
       onReelAdded();
-      alert('Reel added successfully!');
+      // Use simple UI feedback instead of blocking alert
     } catch (error) {
       console.error('Error adding reel:', error);
-      alert('Failed to add reel');
     }
   };
 
@@ -69,6 +75,9 @@ const AddReelForm = ({ onReelAdded }) => {
             </option>
           ))}
         </select>
+        <p className="text-xs text-muted" style={{ marginTop: '4px' }}>
+          Tip: You can also use the "View My Media" gallery above.
+        </p>
       </div>
       <div className="form-group">
         <label className="form-label">Reel ID</label>

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import api from './api';
 
-function App() {
+const AppContent = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     checkAuthStatus();
@@ -31,23 +34,47 @@ function App() {
     try {
       await api.get('/auth/logout');
       setUser(null);
+      navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
   if (loading) {
-    return <div className="login-screen">Loading...</div>;
+    return (
+      <div className="login-screen" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div className="animate-fade-in" style={{ fontSize: '1.2rem', color: 'var(--primary)', fontWeight: 600 }}>
+          Reelzy is loading...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <>
-      {user ? (
-        <Dashboard user={user} onLogout={handleLogout} />
-      ) : (
-        <Login />
-      )}
-    </>
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          user ? <Dashboard user={user} onLogout={handleLogout} /> : <LandingPage onLoginClick={() => navigate('/login')} />
+        } 
+      />
+      <Route 
+        path="/login" 
+        element={
+          user ? <Navigate to="/" replace /> : <Login onBack={() => navigate('/')} />
+        } 
+      />
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

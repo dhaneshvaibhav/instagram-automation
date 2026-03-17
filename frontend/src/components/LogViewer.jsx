@@ -17,7 +17,14 @@ const LogViewer = () => {
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(fetchLogs, 3000);
+    
+    const interval = setInterval(() => {
+      // Only poll if the tab is actually visible
+      if (document.visibilityState === 'visible') {
+        fetchLogs();
+      }
+    }, 3000);
+
     return () => clearInterval(interval);
   }, []);
 
