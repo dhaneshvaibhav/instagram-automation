@@ -7,7 +7,7 @@ This document outlines the API structure, endpoints, and data formats for the In
 The project follows a modular structure:
 - **Routes (`app/api/`)**: Defines the API endpoints and maps them to controllers.
 - **Controllers (`app/controllers/`)**: Contains the business logic for each route.
-- **Services (`app/services/`)**: Handles external API integrations (Instagram/Facebook Graph API).
+- **Services (`app/services/`)**: Handles external API integrations with the Instagram Login API.
 - **Utils (`app/utils/`)**: Provides helper functions for file I/O, logging, and data persistence.
 - **Models (`app/models/`)**: Defines data structures and validation using Pydantic.
 
@@ -101,8 +101,9 @@ Endpoint for Instagram Real-time Updates.
 
 ### **POST `/webhook`**
 - **Description**: Receives real-time comment events from Instagram.
-- **Takes**: JSON payload from Facebook Graph API.
+- **Takes**: JSON payload from the Instagram Webhook.
 - **Returns**: JSON `{"status": "ok"}`.
+- **Note**: The Instagram Login API only allows sending messages to users who have messaged you first in the last 24 hours. Comment events do not open this window.
 
 ---
 

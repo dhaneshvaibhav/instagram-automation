@@ -25,21 +25,14 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
         else:
             message = DEFAULT_MESSAGE
 
-        # To send a DM to a commenter (even if they haven't messaged you first),
-        # we MUST use the Private Replies endpoint. This creates a DM in their inbox.
-        if comment_id:
-            # We use graph.instagram.com for the Private Replies endpoint
-            url = f"https://graph.instagram.com/v25.0/{comment_id}/private_replies"
-            payload = {"message": message}
-            append_log(f"ℹ Attempting Private Reply (DM) to comment {comment_id} via Instagram host...")
-        else:
-            # Standard messaging (requires 24h window)
-            url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
-            payload = {
-                "recipient": {"id": user_id},
-                "message": {"text": message}
-            }
-            append_log(f"ℹ Using Standard Messages endpoint for user {user_id}")
+        # This API (Instagram Login) ONLY supports the standard messaging endpoint.
+        # It requires the user to have messaged you first in the last 24 hours.
+        url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
+        payload = {
+            "recipient": {"id": user_id},
+            "message": {"text": message}
+        }
+        append_log(f"ℹ Using Instagram Messaging endpoint for user {user_id}")
 
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -58,21 +51,8 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
                     error_msg = result.get("error", {}).get("message", "Unknown error")
                     append_log(f"❌ DM failed for {user_id}: {error_msg}", "ERROR")
                     
-                    # If Private Reply failed, we fall back to standard messaging as a last resort
-                    if comment_id and response.status != 200:
-                        append_log(f"⚠ Private Reply failed, falling back to Standard Messaging...", "WARN")
-                        url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
-                        payload = {
-                            "recipient": {"id": user_id},
-                            "message": {"text": message}
-                        }
-                        async with session.post(url, json=payload, headers=headers) as retry_resp:
-                            result = await retry_resp.json()
-                            if retry_resp.status == 200:
-                                append_log(f"✅ DM sent via Standard Messaging fallback")
-                                increment_dm_count()
-                            else:
-                                append_log(f"❌ Fallback also failed: {result.get('error', {}).get('message')}", "ERROR")
+                    if "outside of allowed window" in error_msg.lower():
+                        append_log("💡 Reminder: The 'Instagram API with Instagram Login' only allows replying to users who have messaged you first within 24 hours.", "INFO")
                 return result
 
     except Exception as e:
