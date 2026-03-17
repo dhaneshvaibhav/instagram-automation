@@ -6,7 +6,7 @@ from fastapi import Request, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from app.core.config import VERIFY_TOKEN, APP_SECRET
 from app.services.instagram_service import send_dm
-from app.utils.file_helpers import load_reels, append_log
+from app.utils.file_helpers import load_reels, append_log, load_token_data
 
 def verify_signature(payload: bytes, signature: str):
     if not APP_SECRET:
@@ -77,7 +77,14 @@ async def receive_webhook(request: Request):
                     append_log(f"💬 New Comment: From {commenter_id} on Reel {media_id}: '{comment_text}'")
 
                     if commenter_id and media_id:
-                        reels = load_reels()
+                        # Find the account that owns this media (if possible) or just use the current token
+                        token_data = load_token_data()
+                        if not token_data:
+                            append_log(f"⏭ Skipping: No Instagram account connected.")
+                            continue
+                        
+                        ig_id = token_data["ig_account_id"]
+                        reels = load_reels(ig_id)
                         reel_data = reels.get(media_id)
 
                         if not reel_data:

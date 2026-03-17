@@ -1,6 +1,8 @@
 import json
 import os
 from datetime import datetime, timedelta
+from sqlmodel import Session, select
+from app.core.db import engine, Token, Reel, Stats
 from app.core.config import TOKEN_FILE, REELS_FILE, STATS_FILE
 
 LOG_FILE = "app.log"
@@ -8,40 +10,78 @@ LOG_FILE = "app.log"
 def append_log(message: str, level: str = "INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_entry = f"[{timestamp}] [{level}] {message}\n"
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(log_entry)
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(log_entry)
+    except Exception as e:
+        print(f"Error writing to log file: {e}")
     print(log_entry.strip()) # Also print to terminal if it's visible
 
 def get_logs(limit: int = 50):
     if not os.path.exists(LOG_FILE):
         return []
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-        return lines[-limit:]
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return lines[-limit:]
+    except Exception as e:
+        print(f"Error reading log file: {e}")
+        return []
 
 def clear_logs():
     if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "w", encoding="utf-8") as f:
-            f.truncate(0)
+        try:
+            with open(LOG_FILE, "w", encoding="utf-8") as f:
+                f.truncate(0)
+        except Exception as e:
+            print(f"Error clearing log file: {e}")
     return True
 
 def load_token_data():
-    try:
-        with open(TOKEN_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
+    with Session(engine) as session:
+        statement = select(Token)
+        token = session.exec(statement).first()
+        if token:
+            return {
+                "access_token": token.access_token,
+                "ig_account_id": token.ig_account_id,
+                "username": token.username,
+                "name": token.name,
+                "profile_picture_url": token.profile_picture_url,
+                "followers_count": token.followers_count,
+                "follows_count": token.follows_count,
+                "media_count": token.media_count,
+                "biography": token.biography,
+                "expires_at": token.expires_at.isoformat() if token.expires_at else None
+            }
         return None
 
-def save_token(access_token: str, ig_account_id: str, username: str = ""):
-    expires_at = (datetime.now() + timedelta(days=60)).isoformat()
-    data = {
-        "access_token": access_token,
-        "ig_account_id": ig_account_id,
-        "username": username,
-        "expires_at": expires_at
-    }
-    with open(TOKEN_FILE, "w", encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
+def save_token(data: dict):
+    # data can be a full profile or just basic info
+    with Session(engine) as session:
+        # Clear old tokens (assuming one account for now)
+        session.query(Token).delete()
+        
+        expires_at = data.get("expires_at")
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at)
+        elif not expires_at:
+            expires_at = datetime.now() + timedelta(days=60)
+
+        token = Token(
+            access_token=data.get("access_token"),
+            ig_account_id=data.get("ig_account_id"),
+            username=data.get("username", ""),
+            name=data.get("name"),
+            profile_picture_url=data.get("profile_picture_url"),
+            followers_count=data.get("followers_count", 0),
+            follows_count=data.get("follows_count", 0),
+            media_count=data.get("media_count", 0),
+            biography=data.get("biography", ""),
+            expires_at=expires_at
+        )
+        session.add(token)
+        session.commit()
 
 def get_access_token():
     data = load_token_data()
@@ -53,35 +93,107 @@ def get_access_token():
             return None
     return data.get("access_token")
 
-def load_reels():
-    try:
-        with open(REELS_FILE) as f:
-            return json.load(f)
-    except:
-        return {}
+def load_reels(ig_account_id: str = None):
+    if not ig_account_id:
+        token = load_token_data()
+        if not token: return {}
+        ig_account_id = token["ig_account_id"]
+        
+    with Session(engine) as session:
+        statement = select(Reel).where(Reel.ig_account_id == ig_account_id)
+        reels = session.exec(statement).all()
+        return {reel.reel_id: {"message": reel.message, "keyword": reel.keyword} for reel in reels}
 
-def save_reels(data: dict):
-    with open(REELS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+def save_reels(data: dict, ig_account_id: str = None):
+    if not ig_account_id:
+        token = load_token_data()
+        if not token: return
+        ig_account_id = token["ig_account_id"]
 
-def load_stats():
-    try:
-        with open(STATS_FILE) as f:
-            return json.load(f)
-    except:
-        return {"total_dms": 0, "dms_today": 0, "last_reset": datetime.now().date().isoformat()}
+    with Session(engine) as session:
+        # Clear reels for this user
+        session.query(Reel).filter(Reel.ig_account_id == ig_account_id).delete()
+        for reel_id, reel_data in data.items():
+            reel = Reel(
+                ig_account_id=ig_account_id,
+                reel_id=reel_id,
+                message=reel_data.get("message"),
+                keyword=reel_data.get("keyword")
+            )
+            session.add(reel)
+        session.commit()
 
-def save_stats(data: dict):
-    with open(STATS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+def load_stats(ig_account_id: str = None):
+    if not ig_account_id:
+        token = load_token_data()
+        if not token: return {"total_dms": 0, "dms_today": 0, "last_reset": datetime.now().date().isoformat()}
+        ig_account_id = token["ig_account_id"]
 
-def increment_dm_count():
-    stats = load_stats()
-    today = datetime.now().date().isoformat()
-    # Reset today's count if it's a new day
-    if stats.get("last_reset") != today:
-        stats["dms_today"] = 0
-        stats["last_reset"] = today
-    stats["total_dms"] = stats.get("total_dms", 0) + 1
-    stats["dms_today"] = stats.get("dms_today", 0) + 1
-    save_stats(stats)
+    with Session(engine) as session:
+        statement = select(Stats).where(Stats.ig_account_id == ig_account_id)
+        stats = session.exec(statement).first()
+        if not stats:
+            stats = Stats(ig_account_id=ig_account_id)
+            session.add(stats)
+            session.commit()
+            session.refresh(stats)
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        if stats.last_reset != today:
+            stats.dms_today = 0
+            stats.last_reset = today
+            session.add(stats)
+            session.commit()
+            session.refresh(stats)
+            
+        return {
+            "total_dms": stats.total_dms,
+            "dms_today": stats.dms_today,
+            "last_reset": stats.last_reset
+        }
+
+def save_stats(data: dict, ig_account_id: str = None):
+    if not ig_account_id:
+        token = load_token_data()
+        if not token: return
+        ig_account_id = token["ig_account_id"]
+
+    with Session(engine) as session:
+        stats = session.get(Stats, ig_account_id)
+        if not stats:
+            stats = Stats(ig_account_id=ig_account_id)
+        
+        stats.total_dms = data.get("total_dms", stats.total_dms)
+        stats.dms_today = data.get("dms_today", stats.dms_today)
+        stats.last_reset = data.get("last_reset", stats.last_reset)
+        
+        session.add(stats)
+        session.commit()
+
+def delete_token():
+    with Session(engine) as session:
+        session.query(Token).delete()
+        session.commit()
+
+def increment_dm_count(ig_account_id: str = None):
+    if not ig_account_id:
+        token = load_token_data()
+        if not token: return
+        ig_account_id = token["ig_account_id"]
+
+    with Session(engine) as session:
+        stats = session.get(Stats, ig_account_id)
+        if not stats:
+            stats = Stats(ig_account_id=ig_account_id)
+            session.add(stats)
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        if stats.last_reset != today:
+            stats.dms_today = 0
+            stats.last_reset = today
+            
+        stats.total_dms += 1
+        stats.dms_today += 1
+        
+        session.add(stats)
+        session.commit()

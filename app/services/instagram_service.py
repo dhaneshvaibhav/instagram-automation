@@ -17,7 +17,7 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
             return None
 
         # Get message for this specific reel
-        reels = load_reels()
+        reels = load_reels(ig_account_id)
         reel_data = reels.get(media_id)
 
         if reel_data:

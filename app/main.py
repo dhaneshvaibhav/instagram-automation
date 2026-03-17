@@ -3,8 +3,13 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from app.api import auth, webhook, reels, stats
+from app.core.db import init_db
 
 app = FastAPI(title="Instagram Reel DM Bot", version="1.0.0")
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
 
 # Add CORS Middleware
 app.add_middleware(

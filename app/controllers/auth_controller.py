@@ -3,14 +3,14 @@ import json
 from datetime import datetime, timedelta
 from fastapi import HTTPException, Query
 from fastapi.responses import RedirectResponse
-from app.core.config import APP_ID, REDIRECT_URI, TOKEN_FILE, FRONTEND_URL
+from app.core.config import APP_ID, REDIRECT_URI, FRONTEND_URL
 from app.services.token_service import (
     exchange_code_for_token, 
     fetch_ig_profile, 
     get_long_lived_token,
     refresh_long_lived_token
 )
-from app.utils.file_helpers import load_token_data, save_token
+from app.utils.file_helpers import load_token_data, save_token, delete_token
 
 async def login():
     if not APP_ID:
@@ -75,8 +75,7 @@ async def callback(code: str = None, error: str = None, error_reason: str = None
             "expires_at": expires_at
         }
         
-        with open(TOKEN_FILE, "w") as f:
-            json.dump(data, f, indent=2)
+        save_token(data)
             
         return RedirectResponse(url=f"{FRONTEND_URL}/")
 
@@ -135,8 +134,7 @@ async def refresh_token():
 
 async def logout():
     try:
-        if os.path.exists(TOKEN_FILE):
-            os.remove(TOKEN_FILE)
+        delete_token()
     except Exception:
         pass
     return {"status": "success", "message": "Logged out successfully"}
