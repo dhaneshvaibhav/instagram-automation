@@ -21,14 +21,9 @@ app.include_router(webhook.router)
 app.include_router(reels.router)
 app.include_router(stats.router)
 
-@app.get('/')
+@app.get("/")
 async def serve_dashboard():
-    # Looking for templates directory in the root
-    template_path = Path(__file__).parent.parent / "templates" / "index.html"
-    if not template_path.exists():
+    dashboard_path = Path(__file__).parent.parent / "templates" / "index.html"
+    if not dashboard_path.exists():
         raise HTTPException(status_code=404, detail="Dashboard not found")
-    return FileResponse(template_path, media_type="text/html")
-
-if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run("app.main:app", host='0.0.0.0', port=5000, reload=True)
+    return FileResponse(dashboard_path)

@@ -19,9 +19,15 @@ def get_logs(limit: int = 50):
         lines = f.readlines()
         return lines[-limit:]
 
+def clear_logs():
+    if os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "w", encoding="utf-8") as f:
+            f.truncate(0)
+    return True
+
 def load_token_data():
     try:
-        with open(TOKEN_FILE) as f:
+        with open(TOKEN_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except:
         return None
@@ -34,7 +40,7 @@ def save_token(access_token: str, ig_account_id: str, username: str = ""):
         "username": username,
         "expires_at": expires_at
     }
-    with open(TOKEN_FILE, "w") as f:
+    with open(TOKEN_FILE, "w", encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
 def get_access_token():

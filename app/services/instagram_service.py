@@ -25,47 +25,32 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
         else:
             message = DEFAULT_MESSAGE
 
-        # If triggered by a comment, we attempt to use the Private Replies endpoint.
-        # NOTE: This endpoint is technically part of the 'Instagram Graph API'.
-        # For 'Instagram API with Instagram Login', this may require the 'instagram_manage_messages' permission
-        # and for the app to be in 'Live' mode.
+        # This API (Instagram Login) supports the 'comment_id' recipient type
+        # for automated DMs in response to a comment.
         if comment_id:
-            # We try graph.facebook.com as it's the primary host for Private Replies
-            url = f"https://graph.facebook.com/v25.0/{comment_id}/private_replies"
-            payload = {"message": message}
-            append_log(f"ℹ Attempting Private Reply to comment {comment_id} via Graph API...")
+            url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
+            payload = {
+                "recipient": {"comment_id": comment_id},
+                "message": {"text": message}
+            }
+            append_log(f"ℹ Using Instagram Messaging endpoint with comment_id {comment_id}")
         else:
-            # Standard messaging (requires 24h window)
             url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
             payload = {
                 "recipient": {"id": user_id},
                 "message": {"text": message}
             }
-            append_log(f"ℹ Using Standard Messages endpoint for user {user_id}")
+            append_log(f"ℹ Using standard user_id messaging endpoint for user {user_id}")
 
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Accept": "application/json",
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "Content-Type": "application/json"
         }
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
                 result = await response.json()
-                
-                # If Private Reply fails with "Object does not exist", it means this API product 
-                # (Instagram Login) doesn't support it. We fall back to standard messaging.
-                if comment_id and response.status != 200 and result.get("error", {}).get("code") in [100, 10]:
-                    append_log(f"⚠ Private Reply not supported by this API. Falling back to Standard Messaging...", "WARN")
-                    url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
-                    payload = {
-                        "recipient": {"id": user_id},
-                        "message": {"text": message}
-                    }
-                    async with session.post(url, json=payload, headers=headers) as retry_resp:
-                        result = await retry_resp.json()
-                        response = retry_resp
 
                 if response.status == 200:
                     append_log(f"✅ DM sent successfully to {user_id}")
@@ -73,8 +58,9 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
                 else:
                     error_msg = result.get("error", {}).get("message", "Unknown error")
                     append_log(f"❌ DM failed for {user_id}: {error_msg}", "ERROR")
+                    
                     if "outside of allowed window" in error_msg.lower():
-                        append_log("💡 Tip: This API (Instagram Login) requires the user to message you first. For 100% automated replies to any commenter, you must use the 'Instagram Graph API' (with Facebook Page connection).", "INFO")
+                        append_log("💡 Reminder: The 'Instagram API with Instagram Login' only allows replying to users who have messaged you first within 24 hours.", "INFO")
                 return result
 
     except Exception as e:

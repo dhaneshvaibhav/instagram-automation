@@ -741,7 +741,7 @@
                         <input type="text" class="form-input" id="keyword" placeholder="e.g. link, info, send">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">DM Message</label>
+                        <label class="form-label">DM Message (Text to send)</label>
                         <textarea class="form-textarea" id="message" placeholder="Write your custom message..." required></textarea>
                     </div>
                     <div class="form-actions">
@@ -760,7 +760,7 @@
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <span id="logStatus" style="font-size: 11px; color: #888;">● Polling...</span>
-                        <button class="btn btn-secondary btn-small" style="padding: 2px 8px; font-size: 11px; background: transparent; color: #888; border-color: #444;" onclick="clearLogs()">Clear UI</button>
+                        <button class="btn btn-secondary btn-small" style="padding: 2px 8px; font-size: 11px; background: #ff4d4d; color: white; border: none; cursor: pointer; border-radius: 4px;" onclick="handleClearLogs()">Clear Server Logs</button>
                     </div>
                 </div>
                 <div id="logContainer">
@@ -905,7 +905,7 @@
             }
         }
         
-        let lastLogCount = 0;
+        let lastLogContent = "";
         async function fetchLogs() {
             try {
                 const response = await fetch(`${API_BASE}/api/logs`);
@@ -913,11 +913,13 @@
                 const data = await response.json();
                 const logs = data.logs || [];
                 
-                if (logs.length === 0) return;
+                const logString = logs.join('');
+                if (logString === lastLogContent) return;
                 
-                // Only update if we have new logs
-                if (logs.length !== lastLogCount) {
-                    const container = document.getElementById('logContainer');
+                const container = document.getElementById('logContainer');
+                if (logs.length === 0) {
+                    container.innerHTML = '<div class="log-entry" style="color: #888;">Waiting for activity...</div>';
+                } else {
                     container.innerHTML = logs.map(log => {
                         // Extract [Timestamp] [LEVEL] Message
                         const match = log.match(/^\[(.*?)\] \[(.*?)\] (.*)$/);
@@ -928,20 +930,33 @@
                         }
                         return `<div class="log-entry">${escapeHtml(log)}</div>`;
                     }).join('');
-                    
-                    // Auto scroll to bottom
-                    const section = document.querySelector('.log-section');
-                    section.scrollTop = section.scrollHeight;
-                    lastLogCount = logs.length;
                 }
+                
+                // Auto scroll to bottom
+                const section = document.querySelector('.log-section');
+                section.scrollTop = section.scrollHeight;
+                lastLogContent = logString;
             } catch (error) {
                 console.error('Error fetching logs:', error);
             }
         }
 
-        function clearLogs() {
-            document.getElementById('logContainer').innerHTML = '<div class="log-entry" style="color: #888;">Logs cleared (UI only)</div>';
-            lastLogCount = 0;
+        async function handleClearLogs() {
+            if (!confirm('This will permanently delete all logs from the server. Continue?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/logs`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) throw new Error('Failed to clear logs');
+                
+                showToast('Server logs cleared', 'success');
+                lastLogContent = "";
+                fetchLogs();
+            } catch (error) {
+                console.error('Error clearing logs:', error);
+                showToast('Error clearing logs', 'error');
+            }
         }
 
         async function loadStats() {
@@ -1051,19 +1066,18 @@
                 const data = await response.json();
                 const reels = data.reels || [];
                 
-                renderReels(reels);
+                renderReelCards(reels);
             } catch (error) {
                 console.error('Error loading reels:', error);
                 showToast('Error loading reels', 'error');
             }
         }
 
-        // Render Reels
-        function renderReels(reels) {
+        // Render Reel Cards
+        function renderReelCards(reels) {
             const container = document.getElementById('reelsContainer');
-            
             if (reels.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No reels yet. Add one to get started.</p></div>';
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #888; background: #fafafa; border-radius: 12px; border: 1px dashed #ddd;">No reels configured. Add one below!</div>';
                 return;
             }
 
@@ -1137,12 +1151,12 @@
                             <input type="text" class="form-input" id="edit-keyword-${reelId}" value="${escapeHtml(reel.keyword || '')}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">DM Message</label>
+                            <label class="form-label">DM Message (Text to send)</label>
                             <textarea class="form-textarea" id="edit-message-${reelId}">${escapeHtml(reel.message)}</textarea>
                         </div>
                         <div class="form-actions">
                             <button class="btn btn-secondary" onclick="cancelEdit('${reelId}')">Cancel</button>
-                            <button class="btn btn-primary" onclick="saveEdit('${reelId}')">Save</button>
+                            <button class="btn btn-primary" onclick="saveEdit('${reelId}')">Save Changes</button>
                         </div>
                     </div>
                 `;

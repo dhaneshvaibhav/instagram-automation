@@ -1,3 +1,4 @@
+
 import os
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
@@ -12,22 +13,15 @@ from app.services.token_service import (
 )
 from app.utils.file_helpers import load_token_data, save_token
 
+
+from app.controllers import auth_controller
+
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.get('/login')
 async def auth_login():
-    if not APP_ID:
-        raise HTTPException(status_code=500, detail="APP_ID not configured")
-
-    params = {
-        "client_id": APP_ID,
-        "redirect_uri": REDIRECT_URI,
-        "scope": "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages",
-        "response_type": "code"
-    }
-    # Standard Instagram OAuth
-    auth_url = f"https://www.instagram.com/oauth/authorize?{urlencode(params)}"
-    return RedirectResponse(url=auth_url)
+    return await auth_controller.login()
 
 @router.get('/callback')
 async def auth_callback(
@@ -108,68 +102,20 @@ async def auth_callback(
         print(f"✗ Callback error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+    return await auth_controller.callback(code, error, error_reason)
+
+
 @router.get('/status')
 async def auth_status():
-    token_data = load_token_data()
-    if not token_data:
-        return {"connected": False}
-
-    expires_at = token_data.get("expires_at")
-    if expires_at:
-        expiry = datetime.fromisoformat(expires_at)
-        if datetime.now() > expiry:
-            return {"connected": False, "reason": "expired"}
-        
-        # Calculate time remaining
-        remaining = expiry - datetime.now()
-        minutes_left = int(remaining.total_seconds() / 60)
-        days_left = int(remaining.total_seconds() / (24 * 3600))
-        
-        return {
-            "connected": True,
-            "username": token_data.get("username"),
-            "name": token_data.get("name"),
-            "ig_account_id": token_data.get("ig_account_id"),
-            "profile_picture_url": token_data.get("profile_picture_url"),
-            "followers_count": token_data.get("followers_count"),
-            "follows_count": token_data.get("follows_count"),
-            "account_type": token_data.get("account_type"),
-            "media_count": token_data.get("media_count"),
-            "biography": token_data.get("biography"),
-            "expires_at": expires_at,
-            "minutes_left": minutes_left,
-            "days_left": days_left
-        }
-    return {"connected": True}
+    return await auth_controller.get_status()
 
 @router.get('/refresh-token')
 async def refresh_token_route():
-    token_data = load_token_data()
-    if not token_data or not token_data.get("access_token"):
-        raise HTTPException(status_code=401, detail="Not connected")
-    
-    # documentation: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login#refresh-a-long-lived-access-token
-    print("Refreshing long-lived token...")
-    refresh_data = await refresh_long_lived_token(token_data["access_token"])
-    
-    if not refresh_data:
-        raise HTTPException(status_code=500, detail="Failed to refresh token")
-    
-    # Update token data
-    token_data["access_token"] = refresh_data.get("access_token")
-    expires_in = refresh_data.get("expires_in", 5184000)
-    token_data["expires_at"] = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
-    
-    # Save updated data
-    with open(TOKEN_FILE, "w") as f:
-        import json
-        json.dump(token_data, f, indent=2)
-        
-    print(f"✓ Token refreshed. New expiry: {token_data['expires_at']}")
-    return {"status": "success", "expires_at": token_data["expires_at"]}
+    return await auth_controller.refresh_token()
 
 @router.get('/logout')
 async def auth_logout():
+
     try:
         if os.path.exists(TOKEN_FILE):
             os.remove(TOKEN_FILE)
@@ -177,3 +123,6 @@ async def auth_logout():
     except Exception as e:
         print(f"Logout error: {e}")
     return RedirectResponse(url=f"{FRONTEND_URL}/")
+
+    return await auth_controller.logout()
+
