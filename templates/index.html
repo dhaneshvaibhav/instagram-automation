@@ -760,7 +760,7 @@
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <span id="logStatus" style="font-size: 11px; color: #888;">● Polling...</span>
-                        <button class="btn btn-secondary btn-small" style="padding: 2px 8px; font-size: 11px; background: transparent; color: #888; border-color: #444;" onclick="clearLogs()">Clear UI</button>
+                        <button class="btn btn-secondary btn-small" style="padding: 2px 8px; font-size: 11px; background: #ff4d4d; color: white; border: none; cursor: pointer; border-radius: 4px;" onclick="handleClearLogs()">Clear Server Logs</button>
                     </div>
                 </div>
                 <div id="logContainer">
@@ -905,7 +905,7 @@
             }
         }
         
-        let lastLogCount = 0;
+        let lastLogContent = "";
         async function fetchLogs() {
             try {
                 const response = await fetch(`${API_BASE}/api/logs`);
@@ -913,11 +913,13 @@
                 const data = await response.json();
                 const logs = data.logs || [];
                 
-                if (logs.length === 0) return;
+                const logString = logs.join('');
+                if (logString === lastLogContent) return;
                 
-                // Only update if we have new logs
-                if (logs.length !== lastLogCount) {
-                    const container = document.getElementById('logContainer');
+                const container = document.getElementById('logContainer');
+                if (logs.length === 0) {
+                    container.innerHTML = '<div class="log-entry" style="color: #888;">Waiting for activity...</div>';
+                } else {
                     container.innerHTML = logs.map(log => {
                         // Extract [Timestamp] [LEVEL] Message
                         const match = log.match(/^\[(.*?)\] \[(.*?)\] (.*)$/);
@@ -928,20 +930,33 @@
                         }
                         return `<div class="log-entry">${escapeHtml(log)}</div>`;
                     }).join('');
-                    
-                    // Auto scroll to bottom
-                    const section = document.querySelector('.log-section');
-                    section.scrollTop = section.scrollHeight;
-                    lastLogCount = logs.length;
                 }
+                
+                // Auto scroll to bottom
+                const section = document.querySelector('.log-section');
+                section.scrollTop = section.scrollHeight;
+                lastLogContent = logString;
             } catch (error) {
                 console.error('Error fetching logs:', error);
             }
         }
 
-        function clearLogs() {
-            document.getElementById('logContainer').innerHTML = '<div class="log-entry" style="color: #888;">Logs cleared (UI only)</div>';
-            lastLogCount = 0;
+        async function handleClearLogs() {
+            if (!confirm('This will permanently delete all logs from the server. Continue?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/logs`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) throw new Error('Failed to clear logs');
+                
+                showToast('Server logs cleared', 'success');
+                lastLogContent = "";
+                fetchLogs();
+            } catch (error) {
+                console.error('Error clearing logs:', error);
+                showToast('Error clearing logs', 'error');
+            }
         }
 
         async function loadStats() {
