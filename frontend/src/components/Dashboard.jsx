@@ -12,6 +12,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedReelId, setSelectedReelId] = useState('');
   const [notification, setNotification] = useState(null);
+  const [activeTab, setActiveTab] = useState('dm'); // 'dm' or 'reply'
 
   const showToast = (message, type = 'success') => {
     setNotification({ message, type });
@@ -93,8 +94,37 @@ const Dashboard = ({ user, onLogout }) => {
       )}
 
       {/* Reel Messages Section */}
-      <div className="header" style={{ marginBottom: 'var(--spacing-md)', paddingBottom: 'var(--spacing-md)', borderBottom: 'none' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Reel Messages</h2>
+      <div className="header" style={{ marginBottom: 'var(--spacing-md)', paddingBottom: 'var(--spacing-md)', borderBottom: 'none', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: '24px' }}>
+          <h2 
+            style={{ 
+              fontSize: '1.25rem', 
+              color: activeTab === 'dm' ? 'var(--primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              borderBottom: activeTab === 'dm' ? '3px solid var(--primary)' : 'none',
+              paddingBottom: '8px',
+              transition: 'all 0.2s ease',
+              margin: 0
+            }}
+            onClick={() => setActiveTab('dm')}
+          >
+            DM Reels
+          </h2>
+          <h2 
+            style={{ 
+              fontSize: '1.25rem', 
+              color: activeTab === 'reply' ? 'var(--primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              borderBottom: activeTab === 'reply' ? '3px solid var(--primary)' : 'none',
+              paddingBottom: '8px',
+              transition: 'all 0.2s ease',
+              margin: 0
+            }}
+            onClick={() => setActiveTab('reply')}
+          >
+            Reel Reply
+          </h2>
+        </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
             className="btn btn-secondary btn-small" 
@@ -106,7 +136,7 @@ const Dashboard = ({ user, onLogout }) => {
             className="btn btn-primary btn-small"
             onClick={() => document.getElementById('addReelForm').scrollIntoView({ behavior: 'smooth' })}
           >
-            + Add reel
+            + Add {activeTab === 'dm' ? 'DM' : 'Reply'}
           </button>
         </div>
       </div>
@@ -120,14 +150,17 @@ const Dashboard = ({ user, onLogout }) => {
       )}
 
       {/* Reels List */}
-      <ReelsList refreshTrigger={refreshTrigger} />
+      <ReelsList refreshTrigger={refreshTrigger} mode={activeTab} />
 
       {/* Add New Reel Form */}
       <div id="addReelForm" className="card" style={{ marginTop: 'var(--spacing-xl)' }}>
-        <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1.1rem' }}>Add New Reel</h3>
+        <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1.1rem' }}>
+          {activeTab === 'dm' ? 'Add New DM Automation' : 'Add New Reel Reply'}
+        </h3>
         <AddReelForm 
           onReelAdded={handleRefresh} 
           externalReelId={selectedReelId}
+          mode={activeTab}
         />
       </div>
 

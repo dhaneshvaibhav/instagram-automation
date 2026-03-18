@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
-import { Trash2, Send } from 'lucide-react';
+import { Trash2, Send, MessageSquare, Mail, Bot, Info } from 'lucide-react';
 
-const ReelsList = ({ refreshTrigger }) => {
+const ReelsList = ({ refreshTrigger, mode = 'dm' }) => {
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,13 +28,11 @@ const ReelsList = ({ refreshTrigger }) => {
       fetchReels();
     } catch (error) {
       console.error('Error deleting reel:', error);
-      alert('Failed to delete reel');
     }
   };
 
   const handleTest = async (id) => {
     try {
-      // Corrected to match the backend endpoint /api/reels/test-dm
       await api.post('/api/reels/test-dm', {
         user_id: 'me',
         media_id: id
@@ -59,26 +57,54 @@ const ReelsList = ({ refreshTrigger }) => {
   return (
     <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
       {reels.map((reel) => (
-        <div key={reel.id} className="reel-card" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div>
-              <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{reel.id}</span>
-            </div>
-            <div style={{ fontSize: '0.95rem', lineHeight: '1.4', maxWidth: '600px' }}>{reel.message}</div>
-            <div>
+        <div key={reel.id} className="reel-card" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span className="badge badge-neutral" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>ID: {reel.id}</span>
               {reel.keyword && (
-                <span className="badge badge-info">Keyword: {reel.keyword}</span>
+                <span className="badge badge-info">Trigger: {reel.keyword}</span>
+              )}
+              {mode === 'reply' && reel.ai_enabled && (
+                <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Bot size={12} /> AI Enabled
+                </span>
               )}
             </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-secondary btn-small" onClick={() => handleTest(reel.id)} title="Send Test DM">
+                <Send size={14} />
+              </button>
+              <button className="btn btn-danger btn-small" onClick={() => handleDelete(reel.id)} title="Stop Tracking">
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-secondary btn-small" onClick={() => handleTest(reel.id)} title="Send Test DM">
-              <Send size={14} style={{ marginRight: '4px' }} /> Test
-            </button>
-            <button className="btn btn-danger btn-small" onClick={() => handleDelete(reel.id)} title="Stop Tracking">
-              <Trash2 size={14} style={{ marginRight: '4px' }} /> Delete
-            </button>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
+            {mode === 'dm' && (
+              <div style={{ backgroundColor: 'rgba(var(--primary-rgb), 0.05)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--primary)' }}>
+                  <Mail size={14} /> Private DM {reel.ai_enabled && '(Fallback)'}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text)' }}>{reel.dm_message || 'No DM set'}</div>
+              </div>
+            )}
+            
+            {mode === 'reply' && (
+              <div style={{ backgroundColor: 'rgba(var(--success-rgb), 0.05)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid var(--success)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--success)' }}>
+                  <MessageSquare size={14} /> Public Reply {reel.ai_enabled && '(Fallback)'}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text)' }}>{reel.public_reply || 'No public reply set'}</div>
+              </div>
+            )}
           </div>
+
+          {mode === 'reply' && reel.ai_enabled && reel.ai_context && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontStyle: 'italic', padding: '0 5px' }}>
+              <Info size={14} /> AI Context: {reel.ai_context}
+            </div>
+          )}
         </div>
       ))}
     </div>

@@ -58,7 +58,8 @@ def save_token(data: dict):
     # data can be a full profile or just basic info
     with Session(engine) as session:
         # Clear old tokens (assuming one account for now)
-        session.query(Token).delete()
+        from sqlalchemy import text
+        session.execute(text("DELETE FROM token"))
         
         expires_at = data.get("expires_at")
         if isinstance(expires_at, str):
@@ -100,7 +101,17 @@ def load_reels(ig_account_id: str = None):
     with Session(engine) as session:
         statement = select(Reel).where(Reel.ig_account_id == ig_account_id)
         reels = session.exec(statement).all()
-        return {reel.reel_id: {"message": reel.message, "keyword": reel.keyword} for reel in reels}
+        return {
+            reel.reel_id: {
+                "mode": reel.mode,
+                "dm_message": reel.dm_message, 
+                "public_reply": reel.public_reply,
+                "keyword": reel.keyword,
+                "ai_enabled": reel.ai_enabled,
+                "ai_context": reel.ai_context,
+                "ai_summary": reel.ai_summary
+            } for reel in reels
+        }
 
 def save_reels(data: dict, ig_account_id: str = None):
     if not ig_account_id:
@@ -115,8 +126,13 @@ def save_reels(data: dict, ig_account_id: str = None):
             reel = Reel(
                 ig_account_id=ig_account_id,
                 reel_id=reel_id,
-                message=reel_data.get("message"),
-                keyword=reel_data.get("keyword")
+                mode=reel_data.get("mode", "dm"),
+                dm_message=reel_data.get("dm_message", ""),
+                public_reply=reel_data.get("public_reply", ""),
+                keyword=reel_data.get("keyword"),
+                ai_enabled=reel_data.get("ai_enabled", False),
+                ai_context=reel_data.get("ai_context"),
+                ai_summary=reel_data.get("ai_summary")
             )
             session.add(reel)
         session.commit()

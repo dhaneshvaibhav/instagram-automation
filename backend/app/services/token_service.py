@@ -148,3 +148,23 @@ async def fetch_ig_media(access_token: str, user_id: str):
             
             print(f"✗ Media fetch failed: {result.get('error', {}).get('message')}")
             return []
+
+async def fetch_single_media(access_token: str, media_id: str):
+    """
+    Fetches details for a single media object.
+    Documentation: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/get-started#get-media-data
+    """
+    url = f"https://graph.instagram.com/v25.0/{media_id}"
+    params = {
+        "fields": "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp",
+        "access_token": access_token
+    }
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as response:
+            result = await response.json()
+            if response.status == 200:
+                return result
+            
+            print(f"✗ Single media fetch failed for {media_id}: {result.get('error', {}).get('message')}")
+            return None

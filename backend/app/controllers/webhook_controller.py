@@ -5,7 +5,7 @@ import asyncio
 from fastapi import Request, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from app.core.config import VERIFY_TOKEN, APP_SECRET
-from app.services.instagram_service import send_dm
+from app.services.instagram_service import send_dm, send_public_reply
 from app.utils.file_helpers import load_reels, append_log, load_token_data
 
 def verify_signature(payload: bytes, signature: str):
@@ -99,8 +99,31 @@ async def receive_webhook(request: Request):
                                 append_log(f"⏭ Skipping: Keyword '{keyword}' not found.")
 
                         if should_send:
-                            append_log(f"🚀 Logic passed! Triggering DM to {commenter_id} via comment {comment_id}...")
-                            asyncio.create_task(send_dm(commenter_id, media_id, comment_id=comment_id))
+                            mode = reel_data.get("mode", "dm")
+                            append_log(f"🚀 Logic passed! Triggering actions (Mode: {mode}) for {commenter_id}...")
+                            
+                            tasks = []
+                            # 1. Private DM (if mode is 'dm' or 'both')
+                            if mode in ['dm', 'both']:
+                                tasks.append(asyncio.create_task(send_dm(
+                                    user_id=commenter_id, 
+                                    media_id=media_id, 
+                                    comment_id=comment_id,
+                                    comment_text=comment_text
+                                )))
+                            
+                            # 2. Public Reply (if mode is 'reply' or 'both')
+                            if mode in ['reply', 'both']:
+                                tasks.append(asyncio.create_task(send_public_reply(
+                                    comment_id=comment_id,
+                                    media_id=media_id,
+                                    comment_text=comment_text
+                                )))
+                            
+                            if tasks:
+                                await asyncio.gather(*tasks)
+                        else:
+                            append_log(f"ℹ Skipping actions for this comment.")
                 else:
                     append_log(f"ℹ Webhook field '{field}' received (ignored)")
 

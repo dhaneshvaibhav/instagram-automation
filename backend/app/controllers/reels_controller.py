@@ -1,8 +1,9 @@
 from fastapi import HTTPException
 from app.models.reel import ReelData, ReelUpdate
 from app.utils.file_helpers import load_reels, save_reels, load_token_data
-from app.services.token_service import fetch_ig_media
+from app.services.token_service import fetch_ig_media, fetch_single_media
 from app.services.instagram_service import send_dm
+from app.services.ai_service import generate_reel_summary
 
 async def get_instagram_reels():
     token_data = load_token_data()
@@ -44,7 +45,16 @@ async def list_reels():
     reels = load_reels(token_data["ig_account_id"])
     return {
         "reels": [
-            {"id": k, "message": v["message"], "keyword": v.get("keyword")}
+            {
+                "id": k, 
+                "mode": v.get("mode", "dm"),
+                "dm_message": v.get("dm_message"), 
+                "public_reply": v.get("public_reply"),
+                "keyword": v.get("keyword"),
+                "ai_enabled": v.get("ai_enabled"),
+                "ai_context": v.get("ai_context"),
+                "ai_summary": v.get("ai_summary")
+            }
             for k, v in reels.items()
         ]
     }
@@ -60,8 +70,13 @@ async def get_reel_by_id(reel_id: str):
     reel = reels[reel_id]
     return {
         "id": reel_id,
-        "message": reel.get("message"),
-        "keyword": reel.get("keyword")
+        "mode": reel.get("mode", "dm"),
+        "dm_message": reel.get("dm_message"),
+        "public_reply": reel.get("public_reply"),
+        "keyword": reel.get("keyword"),
+        "ai_enabled": reel.get("ai_enabled"),
+        "ai_context": reel.get("ai_context"),
+        "ai_summary": reel.get("ai_summary")
     }
 
 async def create_reel(reel: ReelData):
@@ -74,7 +89,28 @@ async def create_reel(reel: ReelData):
     if reel.reel_id in reels:
         raise HTTPException(status_code=400, detail="Reel already exists")
     
-    reels[reel.reel_id] = {"message": reel.message, "keyword": reel.keyword}
+    # Try to fetch reel data for AI summary
+    ai_summary = None
+    if reel.ai_enabled:
+        try:
+            media_info = await fetch_single_media(token_data["access_token"], reel.reel_id)
+            if media_info and media_info.get("caption"):
+                ai_summary = await generate_reel_summary(
+                    media_info["caption"], 
+                    media_info.get("media_type", "VIDEO")
+                )
+        except Exception as e:
+            print(f"Failed to generate AI summary: {e}")
+
+    reels[reel.reel_id] = {
+        "mode": reel.mode,
+        "dm_message": reel.dm_message, 
+        "public_reply": reel.public_reply,
+        "keyword": reel.keyword,
+        "ai_enabled": reel.ai_enabled,
+        "ai_context": reel.ai_context,
+        "ai_summary": ai_summary
+    }
     save_reels(reels, ig_id)
     return {"id": reel.reel_id, "status": "created"}
 
@@ -88,7 +124,30 @@ async def update_reel(reel_id: str, reel: ReelUpdate):
     if reel_id not in reels:
         raise HTTPException(status_code=404, detail="Reel not found")
     
-    reels[reel_id] = {"message": reel.message, "keyword": reel.keyword}
+    # Try to fetch reel data for AI summary if it's missing or if ai_enabled is toggled
+    existing_reel = reels.get(reel_id, {})
+    ai_summary = existing_reel.get("ai_summary")
+    
+    if reel.ai_enabled and not ai_summary:
+        try:
+            media_info = await fetch_single_media(token_data["access_token"], reel_id)
+            if media_info and media_info.get("caption"):
+                ai_summary = await generate_reel_summary(
+                    media_info["caption"], 
+                    media_info.get("media_type", "VIDEO")
+                )
+        except Exception as e:
+            print(f"Failed to generate AI summary: {e}")
+
+    reels[reel_id] = {
+        "mode": reel.mode,
+        "dm_message": reel.dm_message, 
+        "public_reply": reel.public_reply,
+        "keyword": reel.keyword,
+        "ai_enabled": reel.ai_enabled,
+        "ai_context": reel.ai_context,
+        "ai_summary": ai_summary
+    }
     save_reels(reels, ig_id)
     return {"id": reel_id, "status": "updated"}
 

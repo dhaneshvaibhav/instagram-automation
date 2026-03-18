@@ -56,14 +56,17 @@ Manages the list of Reels to track and their automated responses.
 ### **GET `/api/reels`**
 - **Description**: Retrieves all tracked Reels from `reels.json`.
 - **Takes**: None
-- **Returns**: JSON list of reels with `id`, `message`, and `keyword`.
+- **Returns**: JSON list of reels with `reel_id`, `dm_message`, `public_reply`, `keyword`, `ai_enabled`, and `ai_context`.
 
 ### **POST `/api/reels`**
 - **Description**: Adds a new Reel to track.
 - **Takes**: JSON
-  - `reel_id` (string, required): The Instagram Reel ID.
-  - `message` (string, required): The DM text to send.
-  - `keyword` (string, optional): Only send DM if comment contains this.
+  - `reel_id` (string, required): The Instagram media ID.
+  - `dm_message` (string, required): The DM text to send.
+  - `public_reply` (string, required): The public comment reply text.
+  - `keyword` (string, optional): Only reply if comment contains this.
+  - `ai_enabled` (boolean, optional): Whether to use AI for replies.
+  - `ai_context` (string, optional): Context for AI generation.
 - **Returns**: JSON status.
 
 ### **PUT `/api/reels/{reel_id}`**

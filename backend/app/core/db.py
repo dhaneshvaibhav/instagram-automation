@@ -7,12 +7,20 @@ from datetime import datetime
 if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
     pass
 
-engine = create_engine(DATABASE_URL)
+# Neon (and AWS) connections can sometimes close SSL connections unexpectedly.
+# We add pool_pre_ping=True to check if the connection is alive before using it,
+# and pool_recycle to refresh connections periodically.
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    pool_size=5,
+    max_overflow=10
+)
 
 def init_db():
-    # To apply primary key changes, we'll drop existing tables first.
     # In a real production app, you'd use Alembic for migrations.
-    SQLModel.metadata.drop_all(engine)
+    # We use create_all which only creates tables that don't exist.
     SQLModel.metadata.create_all(engine)
 
 def get_session():
@@ -35,8 +43,13 @@ class Token(SQLModel, table=True):
 class Reel(SQLModel, table=True):
     ig_account_id: str = Field(primary_key=True)
     reel_id: str = Field(primary_key=True)
-    message: str
+    mode: str = Field(default="dm") # 'dm' or 'reply'
+    dm_message: str = Field(default="")
+    public_reply: str = Field(default="")
     keyword: Optional[str] = None
+    ai_enabled: bool = Field(default=False)
+    ai_context: Optional[str] = Field(default=None) # Context to help AI generate better replies
+    ai_summary: Optional[str] = Field(default=None) # AI-generated summary of the reel
 
 class Stats(SQLModel, table=True):
     ig_account_id: str = Field(primary_key=True)

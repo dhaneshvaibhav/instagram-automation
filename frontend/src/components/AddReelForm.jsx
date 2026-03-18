@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 
-const AddReelForm = ({ onReelAdded, externalReelId }) => {
+const AddReelForm = ({ onReelAdded, externalReelId, mode = 'dm' }) => {
   const [formData, setFormData] = useState({
     reelId: '',
     keyword: '',
-    message: ''
+    dm_message: '',
+    public_reply: '',
+    ai_enabled: false,
+    ai_context: ''
   });
   const [igReels, setIgReels] = useState([]);
   const [loadingReels, setLoadingReels] = useState(false);
@@ -33,29 +36,75 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.id]: value });
   };
 
-  const handleSelectChange = (e) => {
+  const handleSelectChange = async (e) => {
     const selectedId = e.target.value;
     if (selectedId) {
       setFormData(prev => ({ ...prev, reelId: selectedId }));
+      
+      // Try to fetch existing automation data for this reel
+      try {
+        const response = await api.get(`/api/reels/${selectedId}`);
+        if (response.data) {
+          const { dm_message, public_reply, keyword, ai_enabled, ai_context } = response.data;
+          setFormData(prev => ({
+            ...prev,
+            dm_message: dm_message || '',
+            public_reply: public_reply || '',
+            keyword: keyword || '',
+            ai_enabled: !!ai_enabled,
+            ai_context: ai_context || ''
+          }));
+        }
+      } catch (error) {
+        // If 404, it's a new reel, which is fine
+        if (error.response && error.response.status !== 404) {
+          console.error('Error fetching reel data:', error);
+        }
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/reels', {
+      // Check if reel already exists to decide between POST and PUT
+      let exists = false;
+      try {
+        await api.get(`/api/reels/${formData.reelId}`);
+        exists = true;
+      } catch (err) {}
+
+      const payload = {
         reel_id: formData.reelId,
+        mode: mode,
         keyword: formData.keyword,
-        message: formData.message
+        dm_message: formData.dm_message,
+        public_reply: formData.public_reply,
+        ai_enabled: formData.ai_enabled,
+        ai_context: formData.ai_context
+      };
+
+      if (exists) {
+        await api.put(`/api/reels/${formData.reelId}`, payload);
+      } else {
+        await api.post('/api/reels', payload);
+      }
+
+      setFormData({ 
+        reelId: '', 
+        keyword: '', 
+        dm_message: '', 
+        public_reply: '',
+        ai_enabled: false,
+        ai_context: ''
       });
-      setFormData({ reelId: '', keyword: '', message: '' });
       onReelAdded();
-      // Use simple UI feedback instead of blocking alert
     } catch (error) {
-      console.error('Error adding reel:', error);
+      console.error('Error saving reel:', error);
     }
   };
 
@@ -75,10 +124,8 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
             </option>
           ))}
         </select>
-        <p className="text-xs text-muted" style={{ marginTop: '4px' }}>
-          Tip: You can also use the "View My Media" gallery above.
-        </p>
       </div>
+
       <div className="form-group">
         <label className="form-label">Reel ID</label>
         <input 
@@ -91,34 +138,81 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
           required 
         />
       </div>
+
       <div className="form-group">
-        <label className="form-label">Keyword (optional)</label>
+        <label className="form-label">Keyword (Trigger)</label>
         <input 
           type="text" 
           className="form-input" 
           id="keyword" 
           value={formData.keyword}
           onChange={handleChange}
-          placeholder="e.g. link, info, send" 
+          placeholder="e.g. info, link, yes"
         />
       </div>
-      <div className="form-group">
-        <label className="form-label">DM Message</label>
-        <textarea 
-          className="form-textarea" 
-          id="message" 
-          value={formData.message}
-          onChange={handleChange}
-          placeholder="Write your custom message..." 
-          required
-        ></textarea>
-      </div>
-      <div className="form-actions" style={{ display: 'flex', gap: 'var(--spacing-sm)', justifyContent: 'flex-end', marginTop: 'var(--spacing-md)' }}>
-        <button type="button" className="btn btn-secondary" onClick={() => setFormData({ reelId: '', keyword: '', message: '' })}>
-          Clear
-        </button>
-        <button type="submit" className="btn btn-primary">Save Reel</button>
-      </div>
+
+      <hr style={{ margin: '20px 0', border: '0', borderTop: '1px solid var(--border)' }} />
+      
+      {mode === 'dm' && (
+        <div className="form-group">
+          <label className="form-label">Private DM Message</label>
+          <textarea 
+            className="form-input" 
+            id="dm_message" 
+            value={formData.dm_message}
+            onChange={handleChange}
+            placeholder="Message to send as a DM..."
+            rows="3"
+            required
+          />
+        </div>
+      )}
+
+      {mode === 'reply' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+            <input 
+              type="checkbox" 
+              id="ai_enabled" 
+              checked={formData.ai_enabled}
+              onChange={handleChange}
+              style={{ width: '18px', height: '18px' }}
+            />
+            <label htmlFor="ai_enabled" style={{ fontWeight: 600, color: 'var(--primary)' }}>Enable AI Personalization (Gemini)</label>
+          </div>
+
+          {formData.ai_enabled && (
+            <div className="form-group">
+              <label className="form-label">AI Context / Instructions</label>
+              <textarea 
+                className="form-input" 
+                id="ai_context" 
+                value={formData.ai_context}
+                onChange={handleChange}
+                placeholder="Tell AI about your product/service to help it generate better replies..."
+                rows="3"
+              />
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">Public Reply Message {formData.ai_enabled && '(Fallback)'}</label>
+            <textarea 
+              className="form-input" 
+              id="public_reply" 
+              value={formData.public_reply}
+              onChange={handleChange}
+              placeholder="Message to post as a public reply..."
+              rows="2"
+              required={!formData.ai_enabled}
+            />
+          </div>
+        </>
+      )}
+
+      <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: '10px' }}>
+        Start {mode === 'dm' ? 'DM Automation' : 'Reply Automation'}
+      </button>
     </form>
   );
 };

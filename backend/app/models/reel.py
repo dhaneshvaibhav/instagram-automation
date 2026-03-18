@@ -3,9 +3,17 @@ from typing import Optional
 
 class ReelData(BaseModel):
     reel_id: str
-    message: str
+    mode: str = "dm"
+    dm_message: Optional[str] = ""
+    public_reply: Optional[str] = ""
     keyword: Optional[str] = None
+    ai_enabled: bool = False
+    ai_context: Optional[str] = None
 
 class ReelUpdate(BaseModel):
-    message: str
+    mode: str = "dm"
+    dm_message: Optional[str] = ""
+    public_reply: Optional[str] = ""
     keyword: Optional[str] = None
+    ai_enabled: bool = False
+    ai_context: Optional[str] = None
