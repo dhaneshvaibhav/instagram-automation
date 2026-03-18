@@ -55,13 +55,19 @@ const AppContent = () => {
       <Route 
         path="/" 
         element={
-          user ? <Dashboard user={user} onLogout={handleLogout} /> : <LandingPage onLoginClick={() => navigate('/login')} />
+          user ? <Navigate to="/dashboard" replace /> : <LandingPage onLoginClick={() => navigate('/login')} />
+        } 
+      />
+      <Route 
+        path="/dashboard" 
+        element={
+          user ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" replace />
         } 
       />
       <Route 
         path="/login" 
         element={
-          user ? <Navigate to="/" replace /> : <Login onBack={() => navigate('/')} />
+          user ? <Navigate to="/dashboard" replace /> : <Login onBack={() => navigate('/')} />
         } 
       />
       {/* Fallback */}

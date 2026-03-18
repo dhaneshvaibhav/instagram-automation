@@ -1,6 +1,5 @@
-import os
 from datetime import datetime, timedelta
-from fastapi import HTTPException, Query
+from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from app.core.config import APP_ID, REDIRECT_URI, FRONTEND_URL
 from app.services.token_service import (
@@ -76,7 +75,7 @@ async def callback(code: str = None, error: str = None, error_reason: str = None
         
         save_token(data)
             
-        return RedirectResponse(url=f"{FRONTEND_URL}/")
+        return RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -126,8 +125,7 @@ async def refresh_token():
     expires_in = refresh_data.get("expires_in", 5184000)
     token_data["expires_at"] = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
     
-    with open(TOKEN_FILE, "w") as f:
-        json.dump(token_data, f, indent=2)
+    save_token(token_data)
         
     return {"status": "success", "expires_at": token_data["expires_at"]}
 
