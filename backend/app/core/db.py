@@ -10,9 +10,8 @@ if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
 engine = create_engine(DATABASE_URL)
 
 def init_db():
-    # To apply primary key changes, we'll drop existing tables first.
+    # Only create tables if they don't exist.
     # In a real production app, you'd use Alembic for migrations.
-    SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
 def get_session():

@@ -59,12 +59,12 @@ const ReelsList = ({ refreshTrigger }) => {
   return (
     <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
       {reels.map((reel) => (
-        <div key={reel.id} className="reel-card" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div key={reel.id} className="reel-card">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <div>
               <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{reel.id}</span>
             </div>
-            <div style={{ fontSize: '0.95rem', lineHeight: '1.4', maxWidth: '600px' }}>{reel.message}</div>
+            <div style={{ fontSize: '0.95rem', lineHeight: '1.4' }}>{reel.message}</div>
             <div>
               {reel.keyword && (
                 <span className="badge badge-info">Keyword: {reel.keyword}</span>

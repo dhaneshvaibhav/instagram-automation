@@ -1,4 +1,4 @@
-from app.utils.file_helpers import load_stats, load_reels, load_token_data, get_logs, clear_logs
+from app.core.db_helpers import load_stats, clear_logs, get_logs, load_reels, load_token_data
 
 async def get_logs_data():
     return {"logs": get_logs()}

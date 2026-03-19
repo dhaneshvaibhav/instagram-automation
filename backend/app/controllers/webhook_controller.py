@@ -6,7 +6,7 @@ from fastapi import Request, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from app.core.config import VERIFY_TOKEN, APP_SECRET
 from app.services.instagram_service import send_dm
-from app.utils.file_helpers import load_reels, append_log, load_token_data
+from app.core.db_helpers import append_log, load_reels, load_token_data
 
 def verify_signature(payload: bytes, signature: str):
     if not APP_SECRET:

@@ -1,38 +1,43 @@
 import os
+import logging
 from datetime import datetime, timedelta
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 from app.core.db import engine, Token, Reel, Stats
 
-LOG_FILE = "app.log"
+logger = logging.getLogger(__name__)
 
 def append_log(message: str, level: str = "INFO"):
+    """Legacy log function, should transition to standard logging."""
+    numeric_level = getattr(logging, level.upper(), logging.INFO)
+    logger.log(numeric_level, message)
+    
+    # Still maintain the app.log file for the LogViewer frontend component
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_entry = f"[{timestamp}] [{level}] {message}\n"
     try:
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
+        with open("app.log", "a", encoding="utf-8") as f:
             f.write(log_entry)
     except Exception as e:
-        print(f"Error writing to log file: {e}")
-    print(log_entry.strip()) # Also print to terminal if it's visible
+        logger.error(f"Error writing to log file: {e}")
 
 def get_logs(limit: int = 50):
-    if not os.path.exists(LOG_FILE):
+    if not os.path.exists("app.log"):
         return []
     try:
-        with open(LOG_FILE, "r", encoding="utf-8") as f:
+        with open("app.log", "r", encoding="utf-8") as f:
             lines = f.readlines()
             return lines[-limit:]
     except Exception as e:
-        print(f"Error reading log file: {e}")
+        logger.error(f"Error reading log file: {e}")
         return []
 
 def clear_logs():
-    if os.path.exists(LOG_FILE):
+    if os.path.exists("app.log"):
         try:
-            with open(LOG_FILE, "w", encoding="utf-8") as f:
+            with open("app.log", "w", encoding="utf-8") as f:
                 f.truncate(0)
         except Exception as e:
-            print(f"Error clearing log file: {e}")
+            logger.error(f"Error clearing log file: {e}")
     return True
 
 def load_token_data():
@@ -55,10 +60,9 @@ def load_token_data():
         return None
 
 def save_token(data: dict):
-    # data can be a full profile or just basic info
     with Session(engine) as session:
-        # Clear old tokens (assuming one account for now)
-        session.query(Token).delete()
+        # Clear old tokens (assuming single account for now)
+        session.exec(delete(Token))
         
         expires_at = data.get("expires_at")
         if isinstance(expires_at, str):
@@ -109,15 +113,19 @@ def save_reels(data: dict, ig_account_id: str = None):
         ig_account_id = token["ig_account_id"]
 
     with Session(engine) as session:
-        # Clear reels for this user
-        session.query(Reel).filter(Reel.ig_account_id == ig_account_id).delete()
         for reel_id, reel_data in data.items():
-            reel = Reel(
-                ig_account_id=ig_account_id,
-                reel_id=reel_id,
-                message=reel_data.get("message"),
-                keyword=reel_data.get("keyword")
-            )
+            # Use merge for upsert
+            reel = session.get(Reel, (ig_account_id, reel_id))
+            if reel:
+                reel.message = reel_data.get("message")
+                reel.keyword = reel_data.get("keyword")
+            else:
+                reel = Reel(
+                    ig_account_id=ig_account_id,
+                    reel_id=reel_id,
+                    message=reel_data.get("message"),
+                    keyword=reel_data.get("keyword")
+                )
             session.add(reel)
         session.commit()
 
@@ -128,8 +136,7 @@ def load_stats(ig_account_id: str = None):
         ig_account_id = token["ig_account_id"]
 
     with Session(engine) as session:
-        statement = select(Stats).where(Stats.ig_account_id == ig_account_id)
-        stats = session.exec(statement).first()
+        stats = session.get(Stats, ig_account_id)
         if not stats:
             stats = Stats(ig_account_id=ig_account_id)
             session.add(stats)
@@ -170,7 +177,7 @@ def save_stats(data: dict, ig_account_id: str = None):
 
 def delete_token():
     with Session(engine) as session:
-        session.query(Token).delete()
+        session.exec(delete(Token))
         session.commit()
 
 def increment_dm_count(ig_account_id: str = None):

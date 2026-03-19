@@ -1,5 +1,5 @@
 import aiohttp
-from app.utils.file_helpers import load_token_data, load_reels, increment_dm_count, append_log
+from app.core.db_helpers import load_token_data, load_reels, increment_dm_count, append_log
 from app.core.config import DEFAULT_MESSAGE
 
 async def send_dm(user_id: str, media_id: str, comment_id: str = None):

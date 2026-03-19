@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import api from './api';
+import { Zap } from 'lucide-react';
 
 const AppContent = () => {
   const [user, setUser] = useState(null);
@@ -42,9 +43,25 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div className="login-screen" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <div className="animate-fade-in" style={{ fontSize: '1.2rem', color: 'var(--primary)', fontWeight: 600 }}>
-          Reelzy is loading...
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: 'var(--bg-subtle)'
+      }}>
+        <div className="animate-fade-in" style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          gap: '16px' 
+        }}>
+          <div className="float-animation">
+            <Zap size={48} color="var(--primary)" fill="var(--primary)" />
+          </div>
+          <div style={{ fontSize: '1.2rem', color: 'var(--primary)', fontWeight: 600 }}>
+            Initializing Reelzy...
+          </div>
         </div>
       </div>
     );

@@ -26,8 +26,8 @@ const Dashboard = ({ user, onLogout }) => {
   const handleRefreshToken = async () => {
     try {
       await api.get('/auth/refresh-token');
-      showToast('Token refreshed! Reloading...');
-      setTimeout(() => window.location.reload(), 1000);
+      showToast('Token refreshed successfully');
+      handleRefresh(); // Refresh dashboard data instead of full page reload
     } catch (error) {
       console.error('Failed to refresh token', error);
       showToast('Failed to refresh token', 'danger');

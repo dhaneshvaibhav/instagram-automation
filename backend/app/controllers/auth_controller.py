@@ -8,7 +8,7 @@ from app.services.token_service import (
     get_long_lived_token,
     refresh_long_lived_token
 )
-from app.utils.file_helpers import load_token_data, save_token, delete_token
+from app.core.db_helpers import save_token, load_token_data, delete_token, append_log
 
 async def login():
     if not APP_ID:

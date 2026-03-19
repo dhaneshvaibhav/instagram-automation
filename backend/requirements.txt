@@ -1,7 +1,8 @@
-fastapi
-uvicorn[standard]
-aiohttp
-python-dotenv
-sqlmodel
-asyncpg
-psycopg2-binary
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+aiohttp==3.9.3
+python-dotenv==1.0.1
+sqlmodel==0.0.16
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+gunicorn==21.2.0

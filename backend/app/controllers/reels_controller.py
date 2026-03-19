@@ -1,18 +1,37 @@
+from datetime import datetime, timedelta
 from fastapi import HTTPException
 from app.models.reel import ReelData, ReelUpdate
-from app.utils.file_helpers import load_reels, save_reels, load_token_data
+from app.core.db_helpers import load_reels, save_reels, load_token_data
 from app.services.token_service import fetch_ig_media
 from app.services.instagram_service import send_dm
+
+# In-memory cache for media results to improve response time
+_media_cache = {}
+CACHE_EXPIRY_MINUTES = 5
 
 async def get_instagram_reels():
     token_data = load_token_data()
     if not token_data or not token_data.get("access_token"):
         raise HTTPException(status_code=401, detail="Not connected")
     
+    ig_id = token_data["ig_account_id"]
+    now = datetime.now()
+    
+    # Check cache first
+    if ig_id in _media_cache:
+        cached_reels, expiry = _media_cache[ig_id]
+        if now < expiry:
+            return {"reels": cached_reels}
+    
+    # Cache miss or expired
     reels = await fetch_ig_media(
         token_data["access_token"], 
         token_data["ig_account_id"]
     )
+    
+    # Update cache
+    _media_cache[ig_id] = (reels, now + timedelta(minutes=CACHE_EXPIRY_MINUTES))
+    
     return {"reels": reels}
 
 async def test_dm(data: dict):
