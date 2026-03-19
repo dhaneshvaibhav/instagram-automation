@@ -104,7 +104,7 @@ def load_reels(ig_account_id: str = None):
     with Session(engine) as session:
         statement = select(Reel).where(Reel.ig_account_id == ig_account_id)
         reels = session.exec(statement).all()
-        return {reel.reel_id: {"message": reel.message, "keyword": reel.keyword} for reel in reels}
+        return {reel.reel_id: {"message": reel.message, "keyword": reel.keyword, "buttons": reel.buttons} for reel in reels}
 
 def save_reels(data: dict, ig_account_id: str = None):
     if not ig_account_id:
@@ -119,12 +119,14 @@ def save_reels(data: dict, ig_account_id: str = None):
             if reel:
                 reel.message = reel_data.get("message")
                 reel.keyword = reel_data.get("keyword")
+                reel.buttons = reel_data.get("buttons")
             else:
                 reel = Reel(
                     ig_account_id=ig_account_id,
                     reel_id=reel_id,
                     message=reel_data.get("message"),
-                    keyword=reel_data.get("keyword")
+                    keyword=reel_data.get("keyword"),
+                    buttons=reel_data.get("buttons")
                 )
             session.add(reel)
         session.commit()

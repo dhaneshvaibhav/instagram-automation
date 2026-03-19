@@ -55,6 +55,8 @@ async def test_dm(data: dict):
     error_msg = result.get("error", {}).get("message", "Unknown error") if result else "Failed to send DM"
     raise HTTPException(status_code=500, detail=error_msg)
 
+import json
+
 async def list_reels():
     token_data = load_token_data()
     if not token_data:
@@ -63,7 +65,12 @@ async def list_reels():
     reels = load_reels(token_data["ig_account_id"])
     return {
         "reels": [
-            {"id": k, "message": v["message"], "keyword": v.get("keyword")}
+            {
+                "id": k, 
+                "message": v["message"], 
+                "keyword": v.get("keyword"),
+                "buttons": v.get("buttons")
+            }
             for k, v in reels.items()
         ]
     }
@@ -80,7 +87,8 @@ async def get_reel_by_id(reel_id: str):
     return {
         "id": reel_id,
         "message": reel.get("message"),
-        "keyword": reel.get("keyword")
+        "keyword": reel.get("keyword"),
+        "buttons": reel.get("buttons")
     }
 
 async def create_reel(reel: ReelData):
@@ -93,7 +101,18 @@ async def create_reel(reel: ReelData):
     if reel.reel_id in reels:
         raise HTTPException(status_code=400, detail="Reel already exists")
     
-    reels[reel.reel_id] = {"message": reel.message, "keyword": reel.keyword}
+    buttons_json = None
+    if reel.buttons:
+        if isinstance(reel.buttons, list):
+            buttons_json = json.dumps([b.dict() for b in reel.buttons])
+        else:
+            buttons_json = reel.buttons
+
+    reels[reel.reel_id] = {
+        "message": reel.message, 
+        "keyword": reel.keyword,
+        "buttons": buttons_json
+    }
     save_reels(reels, ig_id)
     return {"id": reel.reel_id, "status": "created"}
 
@@ -107,7 +126,18 @@ async def update_reel(reel_id: str, reel: ReelUpdate):
     if reel_id not in reels:
         raise HTTPException(status_code=404, detail="Reel not found")
     
-    reels[reel_id] = {"message": reel.message, "keyword": reel.keyword}
+    buttons_json = None
+    if reel.buttons:
+        if isinstance(reel.buttons, list):
+            buttons_json = json.dumps([b.dict() for b in reel.buttons])
+        else:
+            buttons_json = reel.buttons
+
+    reels[reel_id] = {
+        "message": reel.message, 
+        "keyword": reel.keyword,
+        "buttons": buttons_json
+    }
     save_reels(reels, ig_id)
     return {"id": reel_id, "status": "updated"}
 

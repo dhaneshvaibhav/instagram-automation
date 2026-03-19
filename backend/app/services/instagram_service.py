@@ -1,4 +1,5 @@
 import aiohttp
+import json
 from datetime import datetime, timedelta
 from app.core.db_helpers import load_token_data, save_token, load_reels, increment_dm_count, append_log
 from app.core.config import DEFAULT_MESSAGE
@@ -47,9 +48,35 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
         reel_data = reels.get(media_id)
 
         if reel_data:
-            message = reel_data.get("message", DEFAULT_MESSAGE)
+            message_text = reel_data.get("message", DEFAULT_MESSAGE)
+            buttons_data = reel_data.get("buttons")
         else:
-            message = DEFAULT_MESSAGE
+            message_text = DEFAULT_MESSAGE
+            buttons_data = None
+
+        # Build the message payload
+        message_payload = {}
+        if buttons_data:
+            try:
+                buttons = json.loads(buttons_data) if isinstance(buttons_data, str) else buttons_data
+                if buttons and len(buttons) > 0:
+                    message_payload = {
+                        "attachment": {
+                            "type": "template",
+                            "payload": {
+                                "template_type": "button",
+                                "text": message_text,
+                                "buttons": buttons
+                            }
+                        }
+                    }
+                else:
+                    message_payload = {"text": message_text}
+            except Exception as e:
+                append_log(f"⚠ Error parsing buttons: {e}. Falling back to text message.", "WARNING")
+                message_payload = {"text": message_text}
+        else:
+            message_payload = {"text": message_text}
 
         # This API (Instagram Login) supports the 'comment_id' recipient type
         # for automated DMs in response to a comment.
@@ -57,14 +84,14 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
             url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
             payload = {
                 "recipient": {"comment_id": comment_id},
-                "message": {"text": message}
+                "message": message_payload
             }
             append_log(f"ℹ Using Instagram Messaging endpoint with comment_id {comment_id}")
         else:
             url = f"https://graph.instagram.com/v25.0/{ig_account_id}/messages"
             payload = {
                 "recipient": {"id": user_id},
-                "message": {"text": message}
+                "message": message_payload
             }
             append_log(f"ℹ Using standard user_id messaging endpoint for user {user_id}")
 

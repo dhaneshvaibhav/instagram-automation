@@ -63,6 +63,7 @@ async def receive_webhook(request: Request):
             return JSONResponse(content={"status": "ok"})
 
         for entry in entries:
+            # 1. Handle standard "changes" (like comments)
             changes = entry.get("changes", [])
             for change in changes:
                 field = change.get("field")
@@ -103,6 +104,27 @@ async def receive_webhook(request: Request):
                             asyncio.create_task(send_dm(commenter_id, media_id, comment_id=comment_id))
                 else:
                     append_log(f"ℹ Webhook field '{field}' received (ignored)")
+
+            # 2. Handle "messaging" (DMs, postbacks)
+            messaging = entry.get("messaging", [])
+            for message_event in messaging:
+                sender_id = message_event.get("sender", {}).get("id")
+                
+                if "postback" in message_event:
+                    postback = message_event["postback"]
+                    payload = postback.get("payload")
+                    title = postback.get("title")
+                    append_log(f"🔘 Button Clicked: From {sender_id}, Payload: '{payload}', Title: '{title}'")
+                    # Potential logic: send a reply based on the payload
+                
+                elif "message" in message_event:
+                    msg = message_event["message"]
+                    # Skip echoes (messages sent by the bot itself)
+                    if msg.get("is_echo"):
+                        continue
+                        
+                    text = msg.get("text")
+                    append_log(f"📩 New DM: From {sender_id}: '{text}'")
 
         return JSONResponse(content={"status": "ok"})
 

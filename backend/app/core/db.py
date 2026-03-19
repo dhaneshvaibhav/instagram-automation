@@ -1,7 +1,8 @@
 from sqlmodel import SQLModel, create_engine, Session, Field
-from typing import Optional
+from typing import Optional, List
 from app.core.config import DATABASE_URL
 from datetime import datetime
+import json
 
 engine = create_engine(DATABASE_URL)
 
@@ -32,6 +33,8 @@ class Reel(SQLModel, table=True):
     reel_id: str = Field(primary_key=True)
     message: str
     keyword: Optional[str] = None
+    # JSON-encoded string of buttons: [{"type": "web_url", "url": "...", "title": "..."}, ...]
+    buttons: Optional[str] = None 
 
 class Stats(SQLModel, table=True):
     ig_account_id: str = Field(primary_key=True)
