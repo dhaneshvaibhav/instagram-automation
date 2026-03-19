@@ -9,9 +9,11 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-const LandingPage = ({ onLoginClick }) => {
+const LandingPage = ({ user, onLoginClick }) => {
   const [typedText, setTypedText] = useState('');
   const fullText = "Automatically.";
+  
+  const isConnected = user && user.connected;
   
   useEffect(() => {
     let i = 0;
@@ -26,11 +28,7 @@ const LandingPage = ({ onLoginClick }) => {
   return (
     <div className="landing-page" style={{ backgroundColor: 'var(--bg-main)' }}>
       {/* Navbar */}
-      <nav style={{ 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        padding: '20px 40px', position: 'sticky', top: 0, backgroundColor: 'rgba(255,255,255,0.8)',
-        backdropFilter: 'blur(10px)', zIndex: 100, borderBottom: '1px solid var(--border-color)'
-      }}>
+      <nav className="navbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Zap size={24} fill="var(--primary)" color="var(--primary)" />
           <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>Reelzy</span>
@@ -38,7 +36,7 @@ const LandingPage = ({ onLoginClick }) => {
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="#features" className="text-muted" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>Features</a>
           <button onClick={onLoginClick} className="btn btn-primary btn-small">
-            Get Started
+            {isConnected ? 'Dashboard' : 'Get Started'}
           </button>
         </div>
       </nav>
@@ -53,28 +51,30 @@ const LandingPage = ({ onLoginClick }) => {
           <div className="badge badge-info animate-fade-in" style={{ marginBottom: '24px' }}>
             New: Smart Keyword Filtering is Live
           </div>
-          <h1 className="animate-slide-up" style={{ fontSize: '4.5rem', marginBottom: '24px', lineHeight: 1.1, letterSpacing: '-0.02em', minHeight: '135px' }}>
+          <h1 className="hero-title animate-slide-up">
             Stop Chasing Leads. Let Your Reels Do the Work <br />
             <span style={{ color: 'var(--primary)', fontStyle: 'italic' }}>
               {typedText}
               <span style={{ borderRight: '3px solid var(--primary)', marginLeft: '4px', animation: 'fadeIn 0.8s infinite' }}></span>
             </span>
           </h1>
-          <p className="text-muted animate-slide-up delay-1" style={{ fontSize: '1.25rem', marginBottom: '40px', lineHeight: 1.6, maxWidth: '750px', marginInline: 'auto' }}>
+          <p className="hero-p text-muted animate-slide-up delay-1" style={{ fontSize: '1.25rem', marginBottom: '40px', lineHeight: 1.6, maxWidth: '750px', marginInline: 'auto' }}>
             The all-in-one engagement engine for Instagram creators. Convert every comment into a conversation, 
             a lead, or a sale—instantly and securely.
           </p>
-          <div className="animate-slide-up delay-2" style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '60px' }}>
+          <div className="hero-btns animate-slide-up delay-2" style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '60px' }}>
             <button onClick={onLoginClick} className="btn btn-primary" style={{ padding: '16px 36px', fontSize: '1rem' }}>
-              Connect Instagram Now <ArrowRight size={18} />
+              {isConnected ? 'Go to Dashboard' : 'Connect Instagram Now'} <ArrowRight size={18} />
             </button>
-            <button className="btn btn-secondary" style={{ padding: '16px 36px', fontSize: '1rem' }}>
-              Watch Demo
-            </button>
+            {!isConnected && (
+              <button className="btn btn-secondary" style={{ padding: '16px 36px', fontSize: '1rem' }}>
+                Watch Demo
+              </button>
+            )}
           </div>
           
           {/* Mock Social Proof */}
-          <div className="animate-slide-up delay-3" style={{ display: 'flex', justifyContent: 'center', gap: '48px', opacity: 0.7 }}>
+          <div className="social-proof animate-slide-up delay-3" style={{ display: 'flex', justifyContent: 'center', gap: '48px', opacity: 0.7 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '1.75rem', fontWeight: 800 }}>50k+</span>
               <span className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>DMs Sent</span>
@@ -95,13 +95,13 @@ const LandingPage = ({ onLoginClick }) => {
       <section id="features" style={{ padding: '120px 20px', backgroundColor: 'var(--bg-subtle)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-            <h2 style={{ fontSize: '3rem', marginBottom: '16px' }}>Powerful Features</h2>
+            <h2 className="section-title" style={{ marginBottom: '16px' }}>Powerful Features</h2>
             <p className="text-muted" style={{ fontSize: '1.1rem' }}>Engineered for creators who value their time and community.</p>
           </div>
           
           <div className="bento-grid">
             {/* Main Feature - Large Box */}
-            <div className="bento-item" style={{ gridColumn: 'span 2', gridRow: 'span 2', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div className="bento-item bento-item-large">
               <div>
                 <div style={{ marginBottom: '24px', width: '56px', height: '56px', borderRadius: '16px', backgroundColor: 'var(--success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Zap className="text-success" size={28} />
@@ -119,7 +119,7 @@ const LandingPage = ({ onLoginClick }) => {
             </div>
 
             {/* Keyword Filtering */}
-            <div className="bento-item" style={{ gridColumn: 'span 2' }}>
+            <div className="bento-item bento-item-wide">
               <div style={{ display: 'flex', gap: '24px', height: '100%' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ marginBottom: '16px', width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--info-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -162,7 +162,7 @@ const LandingPage = ({ onLoginClick }) => {
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '80px' }}>
             <span className="badge badge-info" style={{ marginBottom: '16px' }}>The Workflow</span>
-            <h2 style={{ fontSize: '3rem', marginBottom: '16px' }}>From Setup to Scale in Minutes</h2>
+            <h2 className="section-title" style={{ marginBottom: '16px' }}>From Setup to Scale in Minutes</h2>
             <p className="text-muted" style={{ fontSize: '1.1rem', maxWidth: '600px', marginInline: 'auto' }}>
               We've simplified the complexity of the Instagram API into a four-step professional workflow.
             </p>
@@ -170,12 +170,7 @@ const LandingPage = ({ onLoginClick }) => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', position: 'relative' }}>
             {/* Connecting Line (Desktop) */}
-            <div style={{ 
-              position: 'absolute', top: '40px', left: '100px', right: '100px', height: '1px', 
-              background: 'linear-gradient(to right, transparent, var(--border-color), transparent)',
-              zIndex: 0,
-              display: window.innerWidth > 1024 ? 'block' : 'none'
-            }}></div>
+            <div className="connecting-line"></div>
 
             {[
               { 

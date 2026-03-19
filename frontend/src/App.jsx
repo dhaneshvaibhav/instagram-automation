@@ -72,7 +72,10 @@ const AppContent = () => {
       <Route 
         path="/" 
         element={
-          user ? <Navigate to="/dashboard" replace /> : <LandingPage onLoginClick={() => navigate('/login')} />
+          <LandingPage 
+            user={user} 
+            onLoginClick={() => navigate(user ? '/dashboard' : '/login')} 
+          />
         } 
       />
       <Route 

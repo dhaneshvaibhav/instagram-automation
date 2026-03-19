@@ -1,19 +1,45 @@
 import aiohttp
-from app.core.db_helpers import load_token_data, load_reels, increment_dm_count, append_log
+from datetime import datetime, timedelta
+from app.core.db_helpers import load_token_data, save_token, load_reels, increment_dm_count, append_log
 from app.core.config import DEFAULT_MESSAGE
+
+async def get_valid_token():
+    """Returns a valid access token, refreshing it if it's close to expiring."""
+    token_data = load_token_data()
+    if not token_data:
+        return None
+
+    access_token = token_data.get("access_token")
+    expires_at = token_data.get("expires_at")
+    
+    if expires_at:
+        expiry = datetime.fromisoformat(expires_at)
+        # If expired or expiring within 7 days, try to refresh
+        if (expiry - datetime.now()) < timedelta(days=7):
+            from app.services.token_service import refresh_long_lived_token
+            refresh_data = await refresh_long_lived_token(access_token)
+            if refresh_data:
+                access_token = refresh_data.get("access_token")
+                expires_in = refresh_data.get("expires_in", 5184000)
+                token_data["access_token"] = access_token
+                token_data["expires_at"] = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
+                save_token(token_data)
+                append_log("✓ Token automatically refreshed.")
+    
+    return access_token
 
 async def send_dm(user_id: str, media_id: str, comment_id: str = None):
     try:
-        token_data = load_token_data()
-        if not token_data:
-            append_log("✗ No token data found", "ERROR")
+        access_token = await get_valid_token()
+        token_data = load_token_data() # Refresh data after potential update
+        
+        if not access_token or not token_data:
+            append_log("✗ No valid token found", "ERROR")
             return None
 
-        access_token = token_data.get("access_token")
         ig_account_id = token_data.get("ig_account_id")
-
-        if not access_token or not ig_account_id:
-            append_log("✗ Missing access token or account ID", "ERROR")
+        if not ig_account_id:
+            append_log("✗ Missing account ID", "ERROR")
             return None
 
         # Get message for this specific reel

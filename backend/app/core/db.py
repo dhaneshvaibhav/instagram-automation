@@ -3,10 +3,6 @@ from typing import Optional
 from app.core.config import DATABASE_URL
 from datetime import datetime
 
-# Adjust DATABASE_URL for asyncpg if necessary, though SQLModel's create_engine usually handles it.
-if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
-    pass
-
 engine = create_engine(DATABASE_URL)
 
 def init_db():
