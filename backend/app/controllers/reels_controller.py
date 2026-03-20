@@ -2,8 +2,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 from app.models.reel import ReelData, ReelUpdate
 from app.core.db_helpers import load_reels, save_reels, load_token_data
-from app.services.token_service import fetch_ig_media
-from app.services.instagram_service import send_dm
+from app.services.instagram_service import send_dm, fetch_ig_media
 
 # In-memory cache for media results to improve response time
 _media_cache = {}

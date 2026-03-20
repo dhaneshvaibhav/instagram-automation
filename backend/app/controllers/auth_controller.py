@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from app.core.config import APP_ID, REDIRECT_URI, FRONTEND_URL
-from app.services.token_service import (
+from app.services.instagram_service import (
     exchange_code_for_token, 
     fetch_ig_profile, 
     get_long_lived_token,
