@@ -33,6 +33,8 @@ class Reel(SQLModel, table=True):
     reel_id: str = Field(primary_key=True)
     message: str
     keyword: Optional[str] = None
+    # If true, all commenters get a DM. If false, only followers.
+    all_users: bool = Field(default=True)
     # JSON-encoded string of buttons: [{"type": "web_url", "url": "...", "title": "..."}, ...]
     buttons: Optional[str] = None 
 

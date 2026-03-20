@@ -251,6 +251,36 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
         return None
 
 # --- FOLLOWER CHECK ---
+async def check_is_follower(target_user_id: str, business_user_id: str, access_token: str) -> bool:
+    """
+    Checks if a target user follows the business account using the Graph API.
+    Note: This requires the 'instagram_manage_insights' or 'pages_show_list' permission 
+    depending on the specific endpoint used, but the most reliable way for 
+    Instagram Graph API (v20+) is checking the friendship status.
+    """
+    # The endpoint for checking friendship status on Instagram Graph API
+    url = f"https://graph.instagram.com/v20.0/{business_user_id}/friendships/{target_user_id}"
+    params = {"access_token": access_token}
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                result = await response.json()
+                if response.status == 200:
+                    # 'followed_by' indicates if target_user_id follows business_user_id
+                    is_follower = result.get("followed_by", False)
+                    if is_follower:
+                        append_log(f"👤 User {target_user_id} IS a follower.")
+                    else:
+                        append_log(f"👤 User {target_user_id} is NOT a follower.")
+                    return is_follower
+                
+                logger.error(f"Friendship check failed: {result}")
+                return False
+    except Exception as e:
+        logger.error(f"Error checking follower status: {e}")
+        return False
+
 async def is_following(target_user_id: str, business_user_id: str, access_token: str) -> bool:
     """Checks if a target user follows the business account."""
     url = f"https://graph.instagram.com/v20.0/{business_user_id}/friendships/{target_user_id}"

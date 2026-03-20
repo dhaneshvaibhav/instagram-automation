@@ -6,7 +6,8 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
   const [formData, setFormData] = useState({
     reelId: '',
     keyword: '',
-    message: ''
+    message: '',
+    allUsers: true
   });
   const [buttons, setButtons] = useState([]);
   const [igReels, setIgReels] = useState([]);
@@ -75,9 +76,10 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
         reel_id: formData.reelId,
         keyword: formData.keyword,
         message: formData.message,
+        all_users: formData.allUsers,
         buttons: validButtons.length > 0 ? validButtons : null
       });
-      setFormData({ reelId: '', keyword: '', message: '' });
+      setFormData({ reelId: '', keyword: '', message: '', allUsers: true });
       setButtons([]);
       onReelAdded();
       // Use simple UI feedback instead of blocking alert
@@ -140,6 +142,24 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
           placeholder="Enter the DM message here..." 
           required
         ></textarea>
+      </div>
+
+      <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+        <input 
+          type="checkbox" 
+          id="allUsers" 
+          checked={formData.allUsers}
+          onChange={(e) => setFormData(prev => ({ ...prev, allUsers: e.target.checked }))}
+          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+        />
+        <div style={{ flex: 1 }}>
+          <label htmlFor="allUsers" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+            Allow all commenters to receive DM
+          </label>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            If disabled, only your followers will receive the automated response.
+          </p>
+        </div>
       </div>
 
       <div className="form-group" style={{ marginTop: '20px' }}>

@@ -68,6 +68,7 @@ async def list_reels():
                 "id": k, 
                 "message": v["message"], 
                 "keyword": v.get("keyword"),
+                "all_users": v.get("all_users", True),
                 "buttons": v.get("buttons")
             }
             for k, v in reels.items()
@@ -87,6 +88,7 @@ async def get_reel_by_id(reel_id: str):
         "id": reel_id,
         "message": reel.get("message"),
         "keyword": reel.get("keyword"),
+        "all_users": reel.get("all_users", True),
         "buttons": reel.get("buttons")
     }
 
@@ -110,6 +112,7 @@ async def create_reel(reel: ReelData):
     reels[reel.reel_id] = {
         "message": reel.message, 
         "keyword": reel.keyword,
+        "all_users": reel.all_users,
         "buttons": buttons_json
     }
     save_reels(reels, ig_id)
@@ -135,6 +138,7 @@ async def update_reel(reel_id: str, reel: ReelUpdate):
     reels[reel_id] = {
         "message": reel.message, 
         "keyword": reel.keyword,
+        "all_users": reel.all_users,
         "buttons": buttons_json
     }
     save_reels(reels, ig_id)

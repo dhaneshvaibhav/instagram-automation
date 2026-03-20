@@ -104,7 +104,15 @@ def load_reels(ig_account_id: str = None):
     with Session(engine) as session:
         statement = select(Reel).where(Reel.ig_account_id == ig_account_id)
         reels = session.exec(statement).all()
-        return {reel.reel_id: {"message": reel.message, "keyword": reel.keyword, "buttons": reel.buttons} for reel in reels}
+        return {
+            reel.reel_id: {
+                "message": reel.message, 
+                "keyword": reel.keyword, 
+                "all_users": reel.all_users,
+                "buttons": reel.buttons
+            } 
+            for reel in reels
+        }
 
 def save_reels(data: dict, ig_account_id: str = None):
     if not ig_account_id:
@@ -113,12 +121,24 @@ def save_reels(data: dict, ig_account_id: str = None):
         ig_account_id = token["ig_account_id"]
 
     with Session(engine) as session:
+        # Get existing reels to identify ones to delete
+        existing_reels = session.exec(select(Reel).where(Reel.ig_account_id == ig_account_id)).all()
+        existing_ids = {r.reel_id for r in existing_reels}
+        incoming_ids = set(data.keys())
+        
+        # Delete reels that are no longer in the incoming data
+        for reel_id in existing_ids - incoming_ids:
+            reel_to_delete = session.get(Reel, (ig_account_id, reel_id))
+            if reel_to_delete:
+                session.delete(reel_to_delete)
+
         for reel_id, reel_data in data.items():
             # Use merge for upsert
             reel = session.get(Reel, (ig_account_id, reel_id))
             if reel:
                 reel.message = reel_data.get("message")
                 reel.keyword = reel_data.get("keyword")
+                reel.all_users = reel_data.get("all_users", True)
                 reel.buttons = reel_data.get("buttons")
             else:
                 reel = Reel(
@@ -126,6 +146,7 @@ def save_reels(data: dict, ig_account_id: str = None):
                     reel_id=reel_id,
                     message=reel_data.get("message"),
                     keyword=reel_data.get("keyword"),
+                    all_users=reel_data.get("all_users", True),
                     buttons=reel_data.get("buttons")
                 )
             session.add(reel)

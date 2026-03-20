@@ -11,9 +11,11 @@ class ReelData(BaseModel):
     reel_id: str
     message: str
     keyword: Optional[str] = None
+    all_users: Optional[bool] = True
     buttons: Optional[Union[str, List[Button]]] = None
 
 class ReelUpdate(BaseModel):
     message: str
     keyword: Optional[str] = None
+    all_users: Optional[bool] = True
     buttons: Optional[Union[str, List[Button]]] = None

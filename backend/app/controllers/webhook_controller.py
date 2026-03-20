@@ -5,7 +5,7 @@ import asyncio
 from fastapi import Request, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from app.core.config import VERIFY_TOKEN, APP_SECRET
-from app.services.instagram_service import send_dm
+from app.services.instagram_service import send_dm, check_is_follower
 from app.core.db_helpers import append_log, load_reels, load_token_data
 
 def verify_signature(payload: bytes, signature: str):
@@ -98,6 +98,18 @@ async def receive_webhook(request: Request):
                             if keyword not in comment_text.lower():
                                 should_send = False
                                 append_log(f"⏭ Skipping: Keyword '{keyword}' not found.")
+                        
+                        # Check follower status if all_users toggle is OFF
+                        if should_send and not reel_data.get("all_users", True):
+                            append_log(f"🔍 Checking if user {commenter_id} follows us...")
+                            is_follower = await check_is_follower(
+                                commenter_id, 
+                                ig_id, 
+                                token_data["access_token"]
+                            )
+                            if not is_follower:
+                                should_send = False
+                                append_log(f"⏭ Skipping: User {commenter_id} is not a follower and all_users is OFF.")
 
                         if should_send:
                             append_log(f"🚀 Logic passed! Triggering DM to {commenter_id} via comment {comment_id}...")

@@ -94,8 +94,11 @@ const ReelsList = ({ refreshTrigger }) => {
 
               <div>
                 {reel.keyword && (
-                  <span className="badge badge-info">Keyword: {reel.keyword}</span>
+                  <span className="badge badge-info" style={{ marginRight: '8px' }}>Keyword: {reel.keyword}</span>
                 )}
+                <span className={`badge ${reel.all_users ? 'badge-success' : 'badge-warning'}`}>
+                  {reel.all_users ? 'All Users' : 'Followers Only'}
+                </span>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
