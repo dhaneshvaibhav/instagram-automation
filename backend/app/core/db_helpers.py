@@ -109,6 +109,9 @@ def load_reels(ig_account_id: str = None):
                 "message": reel.message, 
                 "keyword": reel.keyword, 
                 "all_users": reel.all_users,
+                "auto_like": reel.auto_like,
+                "public_reply": reel.public_reply,
+                "public_reply_message": reel.public_reply_message,
                 "buttons": reel.buttons
             } 
             for reel in reels
@@ -139,6 +142,9 @@ def save_reels(data: dict, ig_account_id: str = None):
                 reel.message = reel_data.get("message")
                 reel.keyword = reel_data.get("keyword")
                 reel.all_users = reel_data.get("all_users", True)
+                reel.auto_like = reel_data.get("auto_like", False)
+                reel.public_reply = reel_data.get("public_reply", False)
+                reel.public_reply_message = reel_data.get("public_reply_message")
                 reel.buttons = reel_data.get("buttons")
             else:
                 reel = Reel(
@@ -147,6 +153,9 @@ def save_reels(data: dict, ig_account_id: str = None):
                     message=reel_data.get("message"),
                     keyword=reel_data.get("keyword"),
                     all_users=reel_data.get("all_users", True),
+                    auto_like=reel_data.get("auto_like", False),
+                    public_reply=reel_data.get("public_reply", False),
+                    public_reply_message=reel_data.get("public_reply_message"),
                     buttons=reel_data.get("buttons")
                 )
             session.add(reel)

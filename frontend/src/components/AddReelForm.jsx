@@ -7,7 +7,10 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
     reelId: '',
     keyword: '',
     message: '',
-    allUsers: true
+    allUsers: true,
+    autoLike: false,
+    publicReply: false,
+    publicReplyMessage: ''
   });
   const [buttons, setButtons] = useState([]);
   const [igReels, setIgReels] = useState([]);
@@ -77,9 +80,20 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
         keyword: formData.keyword,
         message: formData.message,
         all_users: formData.allUsers,
+        auto_like: formData.autoLike,
+        public_reply: formData.publicReply,
+        public_reply_message: formData.publicReplyMessage,
         buttons: validButtons.length > 0 ? validButtons : null
       });
-      setFormData({ reelId: '', keyword: '', message: '', allUsers: true });
+      setFormData({ 
+        reelId: '', 
+        keyword: '', 
+        message: '', 
+        allUsers: true,
+        autoLike: false,
+        publicReply: false,
+        publicReplyMessage: ''
+      });
       setButtons([]);
       onReelAdded();
       // Use simple UI feedback instead of blocking alert
@@ -144,23 +158,74 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
         ></textarea>
       </div>
 
-      <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-        <input 
-          type="checkbox" 
-          id="allUsers" 
-          checked={formData.allUsers}
-          onChange={(e) => setFormData(prev => ({ ...prev, allUsers: e.target.checked }))}
-          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-        />
-        <div style={{ flex: 1 }}>
-          <label htmlFor="allUsers" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
-            Allow all commenters to receive DM
-          </label>
-          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            If disabled, only your followers will receive the automated response.
-          </p>
-        </div>
-      </div>
+      <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+           <input 
+             type="checkbox" 
+             id="allUsers" 
+             checked={formData.allUsers}
+             onChange={(e) => setFormData(prev => ({ ...prev, allUsers: e.target.checked }))}
+             style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+           />
+           <div style={{ flex: 1 }}>
+             <label htmlFor="allUsers" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+               Allow all commenters to receive DM
+             </label>
+             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+               If disabled, only your followers will receive the automated response.
+             </p>
+           </div>
+         </div>
+
+         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+           <input 
+             type="checkbox" 
+             id="autoLike" 
+             checked={formData.autoLike}
+             onChange={(e) => setFormData(prev => ({ ...prev, autoLike: e.target.checked }))}
+             style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+           />
+           <div style={{ flex: 1 }}>
+             <label htmlFor="autoLike" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+               Auto-like comments ❤️
+             </label>
+             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+               The bot will like the comment before sending the DM.
+             </p>
+           </div>
+         </div>
+
+         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+           <input 
+             type="checkbox" 
+             id="publicReply" 
+             checked={formData.publicReply}
+             onChange={(e) => setFormData(prev => ({ ...prev, publicReply: e.target.checked }))}
+             style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+           />
+           <div style={{ flex: 1 }}>
+             <label htmlFor="publicReply" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+               Public comment reply 💬
+             </label>
+             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+               The bot will reply publicly to the comment.
+             </p>
+           </div>
+         </div>
+
+         {formData.publicReply && (
+           <div style={{ marginTop: '8px' }}>
+             <label className="text-xs text-muted">Public Reply Message</label>
+             <input 
+               type="text" 
+               className="form-input form-input-sm" 
+               value={formData.publicReplyMessage}
+               onChange={(e) => setFormData(prev => ({ ...prev, publicReplyMessage: e.target.value }))}
+               placeholder="e.g. Check your DMs! 🚀"
+             />
+           </div>
+         )}
+       </div>
 
       <div className="form-group" style={{ marginTop: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>

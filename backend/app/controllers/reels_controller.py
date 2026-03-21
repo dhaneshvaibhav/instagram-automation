@@ -69,6 +69,9 @@ async def list_reels():
                 "message": v["message"], 
                 "keyword": v.get("keyword"),
                 "all_users": v.get("all_users", True),
+                "auto_like": v.get("auto_like", False),
+                "public_reply": v.get("public_reply", False),
+                "public_reply_message": v.get("public_reply_message"),
                 "buttons": v.get("buttons")
             }
             for k, v in reels.items()
@@ -89,6 +92,9 @@ async def get_reel_by_id(reel_id: str):
         "message": reel.get("message"),
         "keyword": reel.get("keyword"),
         "all_users": reel.get("all_users", True),
+        "auto_like": reel.get("auto_like", False),
+        "public_reply": reel.get("public_reply", False),
+        "public_reply_message": reel.get("public_reply_message"),
         "buttons": reel.get("buttons")
     }
 
@@ -113,6 +119,9 @@ async def create_reel(reel: ReelData):
         "message": reel.message, 
         "keyword": reel.keyword,
         "all_users": reel.all_users,
+        "auto_like": reel.auto_like,
+        "public_reply": reel.public_reply,
+        "public_reply_message": reel.public_reply_message,
         "buttons": buttons_json
     }
     save_reels(reels, ig_id)
@@ -139,6 +148,9 @@ async def update_reel(reel_id: str, reel: ReelUpdate):
         "message": reel.message, 
         "keyword": reel.keyword,
         "all_users": reel.all_users,
+        "auto_like": reel.auto_like,
+        "public_reply": reel.public_reply,
+        "public_reply_message": reel.public_reply_message,
         "buttons": buttons_json
     }
     save_reels(reels, ig_id)

@@ -12,10 +12,16 @@ class ReelData(BaseModel):
     message: str
     keyword: Optional[str] = None
     all_users: Optional[bool] = True
+    auto_like: Optional[bool] = False
+    public_reply: Optional[bool] = False
+    public_reply_message: Optional[str] = None
     buttons: Optional[Union[str, List[Button]]] = None
 
 class ReelUpdate(BaseModel):
     message: str
     keyword: Optional[str] = None
     all_users: Optional[bool] = True
+    auto_like: Optional[bool] = False
+    public_reply: Optional[bool] = False
+    public_reply_message: Optional[str] = None
     buttons: Optional[Union[str, List[Button]]] = None

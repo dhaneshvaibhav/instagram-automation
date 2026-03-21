@@ -254,11 +254,7 @@ async def send_dm(user_id: str, media_id: str, comment_id: str = None):
 async def check_is_follower(target_user_id: str, business_user_id: str, access_token: str) -> bool:
     """
     Checks if a target user follows the business account using the Graph API.
-    Note: This requires the 'instagram_manage_insights' or 'pages_show_list' permission 
-    depending on the specific endpoint used, but the most reliable way for 
-    Instagram Graph API (v20+) is checking the friendship status.
     """
-    # The endpoint for checking friendship status on Instagram Graph API
     url = f"https://graph.instagram.com/v20.0/{business_user_id}/friendships/{target_user_id}"
     params = {"access_token": access_token}
     
@@ -267,7 +263,6 @@ async def check_is_follower(target_user_id: str, business_user_id: str, access_t
             async with session.get(url, params=params) as response:
                 result = await response.json()
                 if response.status == 200:
-                    # 'followed_by' indicates if target_user_id follows business_user_id
                     is_follower = result.get("followed_by", False)
                     if is_follower:
                         append_log(f"👤 User {target_user_id} IS a follower.")
@@ -281,30 +276,38 @@ async def check_is_follower(target_user_id: str, business_user_id: str, access_t
         logger.error(f"Error checking follower status: {e}")
         return False
 
-async def is_following(target_user_id: str, business_user_id: str, access_token: str) -> bool:
-    """Checks if a target user follows the business account."""
-    url = f"https://graph.instagram.com/v20.0/{business_user_id}/friendships/{target_user_id}"
-    params = {"access_token": access_token}
+# --- ENGAGEMENT ACTIONS ---
+
+async def like_comment(comment_id: str, access_token: str) -> bool:
+    """Likes a specific comment."""
+    url = f"https://graph.instagram.com/v20.0/{comment_id}"
+    payload = {"user_likes": True, "access_token": access_token}
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params) as response:
+            async with session.post(url, data=payload) as response:
                 result = await response.json()
-                if response.status == 200:
-                    return result.get("followed_by", False)
+                if response.status == 200 and result.get("success"):
+                    append_log(f"❤️ Successfully liked comment {comment_id}")
+                    return True
+                append_log(f"⚠️ Failed to like comment {comment_id}: {result}", "WARNING")
                 return False
     except Exception as e:
-        logger.error(f"Error in is_following: {e}")
+        logger.error(f"Error in like_comment: {e}")
         return False
 
-# --- PUBLIC COMMENT REPLY ---
 async def public_comment_reply(comment_id: str, message: str, access_token: str) -> bool:
     """Replies publicly to a specific comment."""
     url = f"https://graph.instagram.com/v20.0/{comment_id}/replies"
     payload = {"message": message, "access_token": access_token}
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload) as response:
-                return response.status == 200
+            async with session.post(url, data=payload) as response:
+                result = await response.json()
+                if response.status == 200:
+                    append_log(f"💬 Successfully replied to comment {comment_id}")
+                    return True
+                append_log(f"⚠️ Failed to reply to comment {comment_id}: {result}", "WARNING")
+                return False
     except Exception as e:
         logger.error(f"Error in public_reply: {e}")
         return False

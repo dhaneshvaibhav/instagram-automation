@@ -96,9 +96,15 @@ const ReelsList = ({ refreshTrigger }) => {
                 {reel.keyword && (
                   <span className="badge badge-info" style={{ marginRight: '8px' }}>Keyword: {reel.keyword}</span>
                 )}
-                <span className={`badge ${reel.all_users ? 'badge-success' : 'badge-warning'}`}>
+                <span className={`badge ${reel.all_users ? 'badge-success' : 'badge-warning'}`} style={{ marginRight: '8px' }}>
                   {reel.all_users ? 'All Users' : 'Followers Only'}
                 </span>
+                {reel.auto_like && (
+                  <span className="badge badge-neutral" style={{ marginRight: '8px' }}>❤️ Auto-Like</span>
+                )}
+                {reel.public_reply && (
+                  <span className="badge badge-neutral">💬 Public Reply</span>
+                )}
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>

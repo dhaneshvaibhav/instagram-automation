@@ -35,6 +35,11 @@ class Reel(SQLModel, table=True):
     keyword: Optional[str] = None
     # If true, all commenters get a DM. If false, only followers.
     all_users: bool = Field(default=True)
+    # Auto-like the comment
+    auto_like: bool = Field(default=False)
+    # Public reply to the comment
+    public_reply: bool = Field(default=False)
+    public_reply_message: Optional[str] = None
     # JSON-encoded string of buttons: [{"type": "web_url", "url": "...", "title": "..."}, ...]
     buttons: Optional[str] = None 
 

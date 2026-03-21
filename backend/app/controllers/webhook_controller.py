@@ -5,7 +5,7 @@ import asyncio
 from fastapi import Request, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from app.core.config import VERIFY_TOKEN, APP_SECRET
-from app.services.instagram_service import send_dm, check_is_follower
+from app.services.instagram_service import send_dm, check_is_follower, like_comment, public_comment_reply
 from app.core.db_helpers import append_log, load_reels, load_token_data
 
 def verify_signature(payload: bytes, signature: str):
@@ -112,8 +112,22 @@ async def receive_webhook(request: Request):
                                 append_log(f"⏭ Skipping: User {commenter_id} is not a follower and all_users is OFF.")
 
                         if should_send:
-                            append_log(f"🚀 Logic passed! Triggering DM to {commenter_id} via comment {comment_id}...")
+                            append_log(f"🚀 Logic passed! Triggering actions for {commenter_id} via comment {comment_id}...")
+                            
+                            # 1. Trigger DM
                             asyncio.create_task(send_dm(commenter_id, media_id, comment_id=comment_id))
+                            
+                            # 2. Trigger Auto-Like (if enabled)
+                            if reel_data.get("auto_like"):
+                                asyncio.create_task(like_comment(comment_id, token_data["access_token"]))
+                                
+                            # 3. Trigger Public Reply (if enabled)
+                            if reel_data.get("public_reply") and reel_data.get("public_reply_message"):
+                                asyncio.create_task(public_comment_reply(
+                                    comment_id, 
+                                    reel_data["public_reply_message"], 
+                                    token_data["access_token"]
+                                ))
                 else:
                     append_log(f"ℹ Webhook field '{field}' received (ignored)")
 
