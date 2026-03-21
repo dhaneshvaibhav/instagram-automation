@@ -8,7 +8,6 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
     keyword: '',
     message: '',
     allUsers: true,
-    autoLike: false,
     publicReply: false,
     publicReplyMessage: ''
   });
@@ -80,7 +79,6 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
         keyword: formData.keyword,
         message: formData.message,
         all_users: formData.allUsers,
-        auto_like: formData.autoLike,
         public_reply: formData.publicReply,
         public_reply_message: formData.publicReplyMessage,
         buttons: validButtons.length > 0 ? validButtons : null
@@ -90,7 +88,6 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
         keyword: '', 
         message: '', 
         allUsers: true,
-        autoLike: false,
         publicReply: false,
         publicReplyMessage: ''
       });
@@ -173,24 +170,6 @@ const AddReelForm = ({ onReelAdded, externalReelId }) => {
              </label>
              <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                If disabled, only your followers will receive the automated response.
-             </p>
-           </div>
-         </div>
-
-         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-           <input 
-             type="checkbox" 
-             id="autoLike" 
-             checked={formData.autoLike}
-             onChange={(e) => setFormData(prev => ({ ...prev, autoLike: e.target.checked }))}
-             style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-           />
-           <div style={{ flex: 1 }}>
-             <label htmlFor="autoLike" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
-               Auto-like comments ❤️
-             </label>
-             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-               The bot will like the comment before sending the DM.
              </p>
            </div>
          </div>

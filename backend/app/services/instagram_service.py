@@ -279,21 +279,12 @@ async def check_is_follower(target_user_id: str, business_user_id: str, access_t
 # --- ENGAGEMENT ACTIONS ---
 
 async def like_comment(comment_id: str, access_token: str) -> bool:
-    """Likes a specific comment."""
-    url = f"https://graph.instagram.com/v20.0/{comment_id}"
-    payload = {"user_likes": True, "access_token": access_token}
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=payload) as response:
-                result = await response.json()
-                if response.status == 200 and result.get("success"):
-                    append_log(f"❤️ Successfully liked comment {comment_id}")
-                    return True
-                append_log(f"⚠️ Failed to like comment {comment_id}: {result}", "WARNING")
-                return False
-    except Exception as e:
-        logger.error(f"Error in like_comment: {e}")
-        return False
+    """Likes a specific comment (Note: Liking comments is currently not supported by the official Instagram Graph API for Professional accounts)."""
+    # Liking a comment is not supported via the Graph API.
+    # The POST /{comment_id} endpoint is only for hiding/unhiding, and requires the 'hide' parameter.
+    # Attempting to 'like' will result in: 'The parameter hide is required.'
+    append_log(f"⚠️ Liking comment {comment_id} is not supported by the official Instagram Graph API.", "WARNING")
+    return False
 
 async def public_comment_reply(comment_id: str, message: str, access_token: str) -> bool:
     """Replies publicly to a specific comment."""

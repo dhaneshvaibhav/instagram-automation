@@ -8,6 +8,10 @@ from app.core.config import VERIFY_TOKEN, APP_SECRET
 from app.services.instagram_service import send_dm, check_is_follower, like_comment, public_comment_reply
 from app.core.db_helpers import append_log, load_reels, load_token_data
 
+# Simple in-memory cache to prevent processing the same comment twice
+_processed_comments = set()
+MAX_PROCESSED_CACHE = 500
+
 def verify_signature(payload: bytes, signature: str):
     if not APP_SECRET:
         append_log("WARNING: No APP_SECRET found in .env. Skipping signature check.", "WARN")
@@ -75,11 +79,29 @@ async def receive_webhook(request: Request):
                     comment_id = value.get("id")
                     comment_text = value.get("text", "")
                     
+                    if not comment_id:
+                        continue
+
+                    # 1. Prevent Loops: Skip if the comment is from our own account
+                    token_data = load_token_data()
+                    if token_data and commenter_id == token_data.get("ig_account_id"):
+                        append_log(f"⏭ Skipping: Comment {comment_id} is from ourselves (preventing loop).")
+                        continue
+
+                    # 2. Deduplication: Skip if we've already processed this comment
+                    if comment_id in _processed_comments:
+                        append_log(f"⏭ Skipping: Comment {comment_id} has already been processed.")
+                        continue
+                    
+                    # Mark as processed
+                    _processed_comments.add(comment_id)
+                    if len(_processed_comments) > MAX_PROCESSED_CACHE:
+                        _processed_comments.clear() # Simple cache reset
+
                     append_log(f"💬 New Comment: From {commenter_id} on Reel {media_id}: '{comment_text}'")
 
                     if commenter_id and media_id:
                         # Find the account that owns this media (if possible) or just use the current token
-                        token_data = load_token_data()
                         if not token_data:
                             append_log(f"⏭ Skipping: No Instagram account connected.")
                             continue

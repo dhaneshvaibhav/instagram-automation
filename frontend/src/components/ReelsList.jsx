@@ -99,9 +99,6 @@ const ReelsList = ({ refreshTrigger }) => {
                 <span className={`badge ${reel.all_users ? 'badge-success' : 'badge-warning'}`} style={{ marginRight: '8px' }}>
                   {reel.all_users ? 'All Users' : 'Followers Only'}
                 </span>
-                {reel.auto_like && (
-                  <span className="badge badge-neutral" style={{ marginRight: '8px' }}>❤️ Auto-Like</span>
-                )}
                 {reel.public_reply && (
                   <span className="badge badge-neutral">💬 Public Reply</span>
                 )}
