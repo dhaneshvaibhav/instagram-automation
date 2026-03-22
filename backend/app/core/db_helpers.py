@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import datetime, timedelta
 from sqlmodel import Session, select, delete
-from app.core.db import engine, Token, Reel, Stats
+from app.core.db import engine, Token, Reel, Stats, Subscription
 
 logger = logging.getLogger(__name__)
 
@@ -204,3 +204,140 @@ def increment_dm_count(ig_account_id: str = None):
         
         session.add(stats)
         session.commit()
+
+# ==============================
+# Subscription Helpers
+# ==============================
+
+PLAN_LIMITS = {
+    "starter": {
+        "max_reels": 3,
+        "auto_reply": False,
+        "analytics": "basic",
+        "priority_support": False,
+        "early_access": False,
+        "trial_days": 7,
+    },
+    "pro": {
+        "max_reels": -1,  # unlimited
+        "auto_reply": True,
+        "analytics": "full",
+        "priority_support": True,
+        "early_access": False,
+        "duration_months": 5,
+        "bonus_months": 1,  # first-time
+    },
+    "business": {
+        "max_reels": -1,  # unlimited
+        "auto_reply": True,
+        "analytics": "advanced",
+        "priority_support": True,
+        "early_access": True,
+        "duration_months": 10,
+        "bonus_months": 2,  # first-time
+    },
+}
+
+def get_plan_limits(plan: str = "starter"):
+    return PLAN_LIMITS.get(plan, PLAN_LIMITS["starter"])
+
+def load_subscription(ig_account_id: str = None):
+    if not ig_account_id:
+        token = load_token_data()
+        if not token:
+            return None
+        ig_account_id = token["ig_account_id"]
+
+    with Session(engine) as session:
+        sub = session.get(Subscription, ig_account_id)
+        if not sub:
+            # Auto-create a starter trial for new users
+            now = datetime.now()
+            sub = Subscription(
+                ig_account_id=ig_account_id,
+                plan="starter",
+                started_at=now.isoformat(),
+                expires_at=(now + timedelta(days=7)).isoformat(),
+                is_first_time=True,
+                is_trial=True,
+                trial_started_at=now.isoformat(),
+            )
+            session.add(sub)
+            session.commit()
+            session.refresh(sub)
+
+        return {
+            "ig_account_id": sub.ig_account_id,
+            "plan": sub.plan,
+            "started_at": sub.started_at,
+            "expires_at": sub.expires_at,
+            "is_first_time": sub.is_first_time,
+            "is_trial": sub.is_trial,
+            "trial_started_at": sub.trial_started_at,
+            "limits": get_plan_limits(sub.plan),
+        }
+
+def save_subscription(ig_account_id: str, plan: str, is_first_time: bool = False):
+    limits = get_plan_limits(plan)
+    now = datetime.now()
+    
+    if plan == "starter":
+        expires_at = (now + timedelta(days=7)).isoformat()
+    elif plan == "pro":
+        months = 5 + (1 if is_first_time else 0)
+        expires_at = (now + timedelta(days=months * 30)).isoformat()
+    elif plan == "business":
+        months = 10 + (2 if is_first_time else 0)
+        expires_at = (now + timedelta(days=months * 30)).isoformat()
+    else:
+        expires_at = (now + timedelta(days=7)).isoformat()
+
+    with Session(engine) as session:
+        sub = session.get(Subscription, ig_account_id)
+        if sub:
+            sub.plan = plan
+            sub.started_at = now.isoformat()
+            sub.expires_at = expires_at
+            if is_first_time:
+                sub.is_first_time = False  # used up the first-time bonus
+        else:
+            sub = Subscription(
+                ig_account_id=ig_account_id,
+                plan=plan,
+                started_at=now.isoformat(),
+                expires_at=expires_at,
+                is_first_time=not is_first_time,
+                is_trial=(plan == "starter"),
+                trial_started_at=now.isoformat() if plan == "starter" else None,
+            )
+        session.add(sub)
+        session.commit()
+        session.refresh(sub)
+        return {
+            "ig_account_id": sub.ig_account_id,
+            "plan": sub.plan,
+            "started_at": sub.started_at,
+            "expires_at": sub.expires_at,
+            "is_first_time": sub.is_first_time,
+            "limits": get_plan_limits(sub.plan),
+        }
+
+def check_feature_allowed(feature: str, ig_account_id: str = None):
+    """Check if a feature is allowed for the current subscription plan."""
+    sub = load_subscription(ig_account_id)
+    if not sub:
+        return False
+    limits = sub.get("limits", {})
+    
+    if feature == "auto_reply":
+        return limits.get("auto_reply", False)
+    elif feature == "create_reel":
+        max_reels = limits.get("max_reels", 3)
+        if max_reels == -1:
+            return True
+        # Count current reels
+        reels = load_reels(ig_account_id)
+        return len(reels) < max_reels
+    elif feature == "early_access":
+        return limits.get("early_access", False)
+    return False

@@ -4,7 +4,12 @@ from app.core.config import DATABASE_URL
 from datetime import datetime
 import json
 
-engine = create_engine(DATABASE_URL)
+# SQLite needs check_same_thread=False for FastAPI
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 def init_db():
     # Only create tables if they don't exist.
@@ -41,3 +46,12 @@ class Stats(SQLModel, table=True):
     total_dms: int = 0
     dms_today: int = 0
     last_reset: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
+
+class Subscription(SQLModel, table=True):
+    ig_account_id: str = Field(primary_key=True)
+    plan: str = Field(default="starter")  # starter, pro, business
+    started_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    expires_at: Optional[str] = None
+    is_first_time: bool = Field(default=True)
+    is_trial: bool = Field(default=True)  # 7-day free trial for starter
+    trial_started_at: Optional[str] = None

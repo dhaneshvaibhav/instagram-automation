@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from app.models.reel import ReelData, ReelUpdate
-from app.core.db_helpers import load_reels, save_reels, load_token_data
+from app.core.db_helpers import load_reels, save_reels, load_token_data, check_feature_allowed
 from app.services.token_service import fetch_ig_media
 from app.services.instagram_service import send_dm
 
@@ -100,6 +100,13 @@ async def create_reel(reel: ReelData):
     reels = load_reels(ig_id)
     if reel.reel_id in reels:
         raise HTTPException(status_code=400, detail="Reel already exists")
+
+    # Check plan limits before allowing creation
+    if not check_feature_allowed("create_reel", ig_id):
+        raise HTTPException(
+            status_code=403, 
+            detail="You have reached the maximum number of active reels for your plan. Upgrade to Pro or Business for unlimited reels."
+        )
     
     buttons_json = None
     if reel.buttons:

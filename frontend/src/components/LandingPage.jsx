@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Instagram, 
   Zap, 
@@ -35,6 +36,7 @@ const LandingPage = ({ user, onLoginClick }) => {
         </div>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="#features" className="text-muted" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>Features</a>
+          <Link to="/pricing" className="text-muted" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>Pricing</Link>
           <button onClick={onLoginClick} className="btn btn-primary btn-small">
             {isConnected ? 'Dashboard' : 'Get Started'}
           </button>
@@ -243,8 +245,8 @@ const LandingPage = ({ user, onLoginClick }) => {
           </p>
           <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem' }}>
             <button onClick={onLoginClick} style={{ background: 'none', border: 'none', padding: 0, fontSize: 'inherit', cursor: 'pointer', color: 'inherit' }}>Login</button>
-            <span>Privacy</span>
-            <span>Terms</span>
+            <Link to="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy</Link>
+            <Link to="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>Terms</Link>
           </div>
         </div>
       </footer>

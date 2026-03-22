@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, webhook, reels, stats
+from app.api import auth, webhook, reels, stats, subscription
 from app.core.db import init_db
 
 import logging
@@ -36,6 +36,7 @@ app.include_router(auth.router)
 app.include_router(webhook.router)
 app.include_router(reels.router)
 app.include_router(stats.router)
+app.include_router(subscription.router)
 
 @app.get("/")
 async def root():

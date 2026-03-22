@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'r
 import Dashboard from './components/Dashboard';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
+import TermsAndConditions from './components/TermsAndConditions';
+import Pricing from './components/Pricing';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import api from './api';
 import { Zap } from 'lucide-react';
 
@@ -90,6 +93,9 @@ const AppContent = () => {
           user ? <Navigate to="/dashboard" replace /> : <Login onBack={() => navigate('/')} />
         } 
       />
+      <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

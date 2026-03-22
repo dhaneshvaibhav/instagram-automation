@@ -125,7 +125,7 @@ async def receive_webhook(request: Request):
                         
                     text = msg.get("text")
                     append_log(f"📩 New DM: From {sender_id}: '{text}'")
-
+                    
         return JSONResponse(content={"status": "ok"})
 
     except Exception as e:
